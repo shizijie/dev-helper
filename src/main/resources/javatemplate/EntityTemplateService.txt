@@ -1,9 +1,0 @@
-package ENTITY_PACKAGE;
-
-/**
- * @author ENTITY_CREATER
- * @version ENTITY_CREATED_DATE
- */
-public interface ENTITY_NAMEService {
-
-}
