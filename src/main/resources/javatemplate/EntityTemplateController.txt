@@ -1,0 +1,18 @@
+package ENTITY_PACKAGE;
+
+import com.shizijie.dev.helper.common.BaseController;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+
+
+/**
+ * @author ENTITY_CREATER
+ * @version ENTITY_CREATED_DATE
+ */
+@RestController
+@Slf4j
+public class ENTITY_NAMEController extends BaseController{
+    @Autowired
+    private ENTITY_NAMEService ENTITY_NAMEService;
+
+}
