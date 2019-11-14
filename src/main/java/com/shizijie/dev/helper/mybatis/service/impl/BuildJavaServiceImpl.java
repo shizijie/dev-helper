@@ -131,7 +131,7 @@ public class BuildJavaServiceImpl implements BuildJavaService {
             String line=null;
             StringBuffer sb=new StringBuffer();
             while ((line=bf.readLine())!=null){
-                line=line.replace(ENTITY_PACKAGE,vo.getPackageName());
+                line=line.replace(ENTITY_PACKAGE,vo.getPackageName()==null?"":vo.getPackageName());
                 if(hasDecimal!=null){
                     if(hasDecimal){
                         line=line.replace(ENTITY_BIGDECIMAL,IMPORT_BIGDECIMAL);
