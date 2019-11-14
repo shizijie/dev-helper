@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Class-Path: /Users/shizijie/Documents/gitProject/dev-helper/target/cla
+ sses
+Main-Class: com.shizijie.dev.helper.DevHelperApplication
+

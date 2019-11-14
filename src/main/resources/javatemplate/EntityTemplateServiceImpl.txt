@@ -1,0 +1,14 @@
+package ENTITY_PACKAGE;
+
+import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * @author ENTITY_CREATER
+ * @version ENTITY_CREATED_DATE
+ */
+@Service
+@Slf4j
+public interface ENTITY_NAMEServiceImpl implements ENTITY_NAMEService{
+
+}
