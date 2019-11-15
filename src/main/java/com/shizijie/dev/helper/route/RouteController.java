@@ -14,8 +14,13 @@ public class RouteController {
         return "index";
     }
 
-    @RequestMapping("/getJava")
-    public String getJava(){
-        return "getJava";
+    @RequestMapping("/getJavaFiles")
+    public String getJavaFiles(){
+        return "getJavaFiles";
+    }
+
+    @RequestMapping("/createDatas")
+    public String createDatas(){
+        return "createDatas";
     }
 }

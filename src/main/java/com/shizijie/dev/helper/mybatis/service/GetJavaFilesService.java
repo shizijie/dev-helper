@@ -1,12 +1,12 @@
 package com.shizijie.dev.helper.mybatis.service;
 
-import com.shizijie.dev.helper.mybatis.web.vo.GetTableColumnsVO;
+import com.shizijie.dev.helper.mybatis.web.vo.GetJavaFilesVO;
 
 /**
  * @author shizijie
  * @version 2019-11-12 下午5:23
  */
-public interface BuildJavaService {
+public interface GetJavaFilesService {
     String IMPORT_BIGDECIMAL="import java.math.BigDecimal;";
 
     String IMPORT_DATE="import java.util.Date;";
@@ -49,5 +49,5 @@ public interface BuildJavaService {
 
     String ENTITY_PROPERTY="ENTITY_PROPERTY";
 
-    String buildJavaByTableName(GetTableColumnsVO vo);
+    String buildJavaByTableName(GetJavaFilesVO vo);
 }

@@ -5,7 +5,7 @@
     <script src="webjars/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="webjars/bootstrap/3.3.5/css/bootstrap.min.css" />
     <meta charset="UTF-8">
-    <title>GET JAVA FILES</title>
+    <title>获取实体</title>
 </head>
 
 <body>
@@ -57,44 +57,43 @@
                 <input type="text" class="form-control" id="tableName" name="packageName" placeholder="packageName"  required>
             </div>
         </div>
-        <button onclick="test()" type="button" class="btn btn-primary col-md-offset-5">生成文件</button>
-        <a class="btn btn-info col-md-offset-1" href="/index">返回主页</a>
     </form>
+    <button onclick="getJavaFiles()" type="button" class="btn btn-primary col-md-offset-5">生成文件</button>
+    <a class="btn btn-info col-md-offset-1" href="/index">返回主页</a>
 
 </body>
 <script>
-    function test() {
+    function getJavaFiles() {
         var d = {};
         var t = $('form').serializeArray();
         $.each(t, function () {
             d[this.name] = this.value;
         });
-        // $.ajax({
-        //     type: "post",
-        //     url: "/getTableColumns",
-        //     contentType: "application/json;charset=utf-8",
-        //     data:JSON.stringify(d),
-        //     dataType: "json",
-        //     success:function (data) {
-        //         console.log(data)
-        //         if(data){
-        //             alert(data.msg);
-        //         }
-        //     }
-        // });
-
-        var url = "/getTableColumns";
-        var exportForm = $('<form method="post" action="'+url+'"></form>');
-        $.each(t, function () {
-            var nameInput=$('<input>');
-            nameInput.attr('type','text');
-            nameInput.attr('name',this.name);
-            nameInput.attr('value',this.value);
-            exportForm.append(nameInput);
+        $.ajax({
+            type: "post",
+            url: "/checkConnection",
+            contentType: "application/json;charset=utf-8",
+            data:JSON.stringify(d),
+            dataType: "json",
+            success:function (data) {
+                if(data&&data.code==="000000"){
+                    var url = "/getJavaFiles";
+                    var exportForm = $('<form method="post" action="'+url+'"></form>');
+                    $.each(t, function () {
+                        var nameInput=$('<input>');
+                        nameInput.attr('type','text');
+                        nameInput.attr('name',this.name);
+                        nameInput.attr('value',this.value);
+                        exportForm.append(nameInput);
+                    });
+                    $(document.body).append(exportForm);
+                    exportForm.submit();
+                    exportForm.remove();
+                }else if(data){
+                    alert(data.msg);
+                }
+            }
         });
-        $(document.body).append(exportForm);
-        exportForm.submit();
-        exportForm.remove();
     }
 </script>
 </html>

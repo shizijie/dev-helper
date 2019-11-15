@@ -1,8 +1,7 @@
 package com.shizijie.dev.helper.mybatis.service.impl;
 
-import com.shizijie.dev.helper.DevHelperApplication;
-import com.shizijie.dev.helper.mybatis.service.BuildJavaService;
-import com.shizijie.dev.helper.mybatis.web.vo.GetTableColumnsVO;
+import com.shizijie.dev.helper.mybatis.service.GetJavaFilesService;
+import com.shizijie.dev.helper.mybatis.web.vo.GetJavaFilesVO;
 import com.shizijie.dev.helper.utils.DataSourcesUtils;
 import com.shizijie.dev.helper.utils.FileUtils;
 import com.shizijie.dev.helper.utils.NameUtils;
@@ -15,17 +14,12 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author shizijie
@@ -34,9 +28,9 @@ import java.util.regex.Pattern;
 @Service
 @Slf4j
 //@SuppressWarnings("all")
-public class BuildJavaServiceImpl implements BuildJavaService {
+public class GetJavaFilesServiceImpl implements GetJavaFilesService {
     @Override
-    public String buildJavaByTableName(GetTableColumnsVO vo) {
+    public String buildJavaByTableName(GetJavaFilesVO vo) {
         boolean hasDecimal=false;
         boolean hasDate=false;
         /** java实体 */
@@ -118,7 +112,7 @@ public class BuildJavaServiceImpl implements BuildJavaService {
         return null;
     }
 
-    public String buildFile(String templateFilePath,GetTableColumnsVO vo,String entityProperty,Boolean hasDecimal,Boolean hasDate){
+    public String buildFile(String templateFilePath, GetJavaFilesVO vo, String entityProperty, Boolean hasDecimal, Boolean hasDate){
         ClassPathResource resource=new ClassPathResource(templateFilePath);
         if(!resource.exists()){
             log.info("路径["+templateFilePath+"]下模板不存在!");

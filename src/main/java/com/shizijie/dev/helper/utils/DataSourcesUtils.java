@@ -28,6 +28,24 @@ public class DataSourcesUtils {
         return connection;
     }
 
+    public static String checkConnection(String url,String username,String pwd,String driver){
+        try {
+            Class.forName(driver);
+        } catch (ClassNotFoundException e) {
+            log.error(e.getMessage(),e);
+            return "driver is not find!"+e.getMessage();
+        }
+        try(Connection connection= DriverManager.getConnection(url,username,pwd)){
+            if(connection==null){
+                return "url/user/pwd/driver is error!";
+            }
+        }catch (SQLException e) {
+            log.error(e.getMessage(),e);
+            return "url/user/pwd/driver is error!"+e.getMessage();
+        }
+        return null;
+    }
+
     public static String underlineToCamel(String name){
         if(StringUtils.isBlank(name)){
             return name;

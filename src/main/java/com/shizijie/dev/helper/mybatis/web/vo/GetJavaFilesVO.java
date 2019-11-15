@@ -9,7 +9,7 @@ import javax.validation.constraints.NotBlank;
  * @version 2019-11-11 下午3:45
  */
 @Data
-public class GetTableColumnsVO {
+public class GetJavaFilesVO {
     @NotBlank(message = "数据库连接不能为空！")
     private String url;
     @NotBlank(message = "数据库帐号不能为空！")

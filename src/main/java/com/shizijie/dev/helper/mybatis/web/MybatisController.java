@@ -1,8 +1,12 @@
 package com.shizijie.dev.helper.mybatis.web;
 
 import com.shizijie.dev.helper.common.BaseController;
-import com.shizijie.dev.helper.mybatis.service.BuildJavaService;
-import com.shizijie.dev.helper.mybatis.web.vo.GetTableColumnsVO;
+import com.shizijie.dev.helper.common.ResponseBean;
+import com.shizijie.dev.helper.mybatis.service.CreateDatasService;
+import com.shizijie.dev.helper.mybatis.service.GetJavaFilesService;
+import com.shizijie.dev.helper.mybatis.web.vo.CheckConnectionVO;
+import com.shizijie.dev.helper.mybatis.web.vo.GetJavaFilesVO;
+import com.shizijie.dev.helper.utils.DataSourcesUtils;
 import com.shizijie.dev.helper.utils.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +15,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author shizijie
@@ -20,14 +28,28 @@ import java.nio.file.Paths;
 @Slf4j
 public class MybatisController extends BaseController{
     @Autowired
-    private BuildJavaService buildJavaService;
-    @PostMapping("/getTableColumns")
-    public void getsql(HttpServletResponse response,@Validated GetTableColumnsVO vo){
-        String result=buildJavaService.buildJavaByTableName(vo);
+    private GetJavaFilesService getJavaFilesService;
+    @Autowired
+    private CreateDatasService createDatasService;
+
+    @PostMapping("/getJavaFiles")
+    public void getJavaFiles(HttpServletResponse response,@Validated GetJavaFilesVO vo){
+        String result=getJavaFilesService.buildJavaByTableName(vo);
         if(result==null){
-            FileUtils.downloadBatchByFile(response, Paths.get(BuildJavaService.BASE_OUT_PATH+"/"+vo.getTableName()),vo.getTableName()+".zip");
+            FileUtils.downloadBatchByFile(response, Paths.get(GetJavaFilesService.BASE_OUT_PATH+"/"+vo.getTableName()),vo.getTableName()+".zip");
         }else{
             log.error("读取错误["+result+"]");
         }
     }
+    @PostMapping("/checkConnection")
+    public ResponseBean checkConnection(@Validated @RequestBody CheckConnectionVO vo){
+        String result=DataSourcesUtils.checkConnection(vo.getUrl(),vo.getUsername(),vo.getPwd(),vo.getDriver());
+        return back(result);
+    }
+
+    @PostMapping("/listTableByConnection")
+    public ResponseBean listTableByConnection(@Validated @RequestBody CheckConnectionVO vo){
+        return success(createDatasService.listTableByConnection(vo));
+    }
+
 }
