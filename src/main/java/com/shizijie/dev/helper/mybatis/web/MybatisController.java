@@ -7,6 +7,7 @@ import com.shizijie.dev.helper.mybatis.service.CreateDatasService;
 import com.shizijie.dev.helper.mybatis.service.GetJavaFilesService;
 import com.shizijie.dev.helper.mybatis.web.dto.ListDataEnumDTO;
 import com.shizijie.dev.helper.mybatis.web.vo.CheckConnectionVO;
+import com.shizijie.dev.helper.mybatis.web.vo.GetDataSqlVO;
 import com.shizijie.dev.helper.mybatis.web.vo.GetJavaFilesVO;
 import com.shizijie.dev.helper.mybatis.web.vo.QueryTableInfoVO;
 import com.shizijie.dev.helper.utils.DataSourcesUtils;
@@ -71,6 +72,11 @@ public class MybatisController extends BaseController{
             list.add(dto);
         }
         return success(list);
+    }
+
+    @PostMapping("/getDataSql")
+    public ResponseBean getDataSql(@Validated @RequestBody GetDataSqlVO vo){
+        return back(createDatasService.getDataSql(vo));
     }
 
 }

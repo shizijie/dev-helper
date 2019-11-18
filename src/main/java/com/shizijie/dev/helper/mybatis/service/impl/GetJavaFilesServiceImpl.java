@@ -87,11 +87,8 @@ public class GetJavaFilesServiceImpl implements GetJavaFilesService {
             log.error(e.getMessage(),e);
             return e.getMessage();
         }
-        Path outPath=Paths.get(BASE_OUT_PATH+"/"+vo.getTableName());
-        if(Files.exists(outPath)){
-            FileUtils.deleteFile(new File(BASE_OUT_PATH+"/"+vo.getTableName()));
-        }
-        new File(outPath.toUri()).mkdirs();
+        /** 删除文件 */
+        FileUtils.deleteFileByPath(BASE_OUT_PATH+"/"+vo.getTableName());
         /** 生成sql文件 */
         FileUtils.createFile(BASE_OUT_PATH+"/"+vo.getTableName(),vo.getTableName()+SQL_FILE,sql.toString().getBytes());
         StringBuffer resultSb=new StringBuffer();

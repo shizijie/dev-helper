@@ -43,6 +43,10 @@ public class FileUtils {
     }
 
     public static void createFile(String path,String fileName,byte[] content){
+        Path outPath=Paths.get(path);
+        if(!Files.exists(outPath)){
+            new File(Paths.get(path).toUri()).mkdirs();
+        }
         Path out= Paths.get(path, fileName);
         if(!Files.exists(out)){
             try {
@@ -55,6 +59,13 @@ public class FileUtils {
             Files.write(out,content, StandardOpenOption.WRITE);
         } catch (IOException e) {
             log.error(e.getMessage(),e);
+        }
+    }
+
+    public static void deleteFileByPath(String path) {
+        Path outPath=Paths.get(path);
+        if(Files.exists(outPath)){
+            deleteFile(new File(path));
         }
     }
 

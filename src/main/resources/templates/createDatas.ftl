@@ -52,20 +52,19 @@
     <a class="btn btn-info col-md-offset-1" href="/index">返回主页</a>
     <table id="table"></table>
     <!-- 模态框 -->
-    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalScrollable">test</button>
     <div class="modal fade bd-example-modal-xl" id="exampleModalScrollable" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
         <div class="modal-dialog" style="width:90%" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalScrollableTitle">表造数</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" onclick="closeModel()" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModel()">Close</button>
                     <button type="button" class="btn btn-primary" onclick="createDatas()">创建数据</button>
                 </div>
             </div>
@@ -73,16 +72,38 @@
     </div>
 </body>
 <script>
-    var nowDB={}
-    var formTmp;
+    var nowDB={};
+    var nowTableName;
+    var formArr={};
+    var formDataArr={};
     var optionsHtml;
     listDataEnum();
-
-    $('#exampleModalScrollable').on('hide.bs.modal', function () {
-        if(formTmp){
-            formTmp.remove();
-        }
-    });
+    //关闭时触发
+    function closeModel(){
+        var t = $('#'+nowTableName).serializeArray();
+        var prefix="";
+        var tableData=[];
+        $.each(t, function () {
+            var tmpArr={};
+            if(this.name==='columnName'){
+                prefix=nowTableName+'_'+this.value;
+            }else if(this.name==='dictType'){
+                tmpArr['id']=prefix+'_dictType';
+                tmpArr['value']=this.value;
+                tableData.push(tmpArr);
+            }else if(this.name==='dictValue'){
+                tmpArr['id']=prefix+'_dictValue';
+                tmpArr['value']=this.value;
+                tableData.push(tmpArr);
+            }else if(this.name==='number'){
+                tmpArr['id']=nowTableName+'_number';
+                tmpArr['value']=this.value;
+                tableData.push(tmpArr);
+            }
+        });
+        formDataArr[nowTableName]=tableData;
+        $('#exampleModalScrollable').modal('hide');
+    }
     function listDataEnum() {
         $.ajax({
             type: "get",
@@ -101,13 +122,48 @@
     }
     
     function createDatas() {
-        var d = {};
-        var t = $('#modelForm').serializeArray();
+        var request={};
+        var t = $('#'+nowTableName).serializeArray();
+        var columnName=[];
+        var columnType=[];
+        var dictType=[];
+        var dictValue=[];
         $.each(t, function () {
-            d[this.name] = this.value;
+            if(this.name==='columnName'){
+                columnName.push(this.value);
+            }else if(this.name==='columnType'){
+                columnType.push(this.value);
+            }else if(this.name==='dictType'){
+                dictType.push(this.value);
+            }else if(this.name==='dictValue'){
+                dictValue.push(this.value);
+            }else if(this.name==='number'){
+                request['number']=this.value;
+            }
         });
-        console.log(d);
-        console.log(t);
+        request['columnName']=columnName;
+        request['columnType']=columnType;
+        request['dictType']=dictType;
+        request['dictValue']=dictValue;
+        request['tableName']=nowTableName;
+        var db = $('#dbForm').serializeArray();
+        $.each(db, function () {
+            request[this.name] = this.value;
+        });
+        $.ajax({
+            type: "post",
+            url: "/getDataSql",
+            contentType: "application/json;charset=utf-8",
+            data:JSON.stringify(request),
+            dataType: "json",
+            success:function (data) {
+                if(data&&data.code==="000000"){
+                    closeModel();
+                }else if(data){
+                    alert(data.msg);
+                }
+            }
+        });
     }
     
     function checkConnection() {
@@ -129,9 +185,9 @@
                     $.each(t, function () {
                         temp[this.name] = this.value;
                         nowDB[this.name] = this.value;
-                        $("#"+this.name).attr("disabled",true);
+                        $("#"+this.name).attr("readonly",true);
                     });
-                    $("#checkConnection").attr("disabled",true);
+                    $("#checkConnection").attr("readonly",true);
                     showTable(temp);
                 }else if(data){
                     alert(data.msg);
@@ -186,40 +242,63 @@
 
     function queryTableInfo(table) {
         nowDB['tableName']=table;
-        $.ajax({
-            type: "post",
-            url: "/queryTableInfo",
-            contentType: "application/json;charset=utf-8",
-            data:JSON.stringify(nowDB),
-            dataType: "json",
-            success:function (data) {
-                if(data&&data.code==="000000"){
-                    var exportForm = $('<form id="modelForm" class="form-horizontal">' +
-                            '<div class="row">' +
-                            '<label class="col-md-2 text-center">字段名</label>' +
-                            '<label class="col-md-1 text-center">字段类型</label>' +
-                            '<label class="col-md-2 text-center">字段注释</label>' +
-                            '<label class="col-md-1 text-center">字典值</label>' +
-                            '<label class="col-md-6 text-center">自定义</label>' +
-                            '</div></form>');
-                    $.each(data.result, function () {
-                        var divTmp=$('<div class="row"></div>' );
-                        var html='<input class="col-md-2 text-center" readonly name="columnName" value="'+this.columnName+'">';
-                        html+='<input class="col-md-1 text-center" readonly name="columnType" value="'+this.columnType+'">';
-                        html+='<input class="col-md-2 text-center" readonly name="columnRemark" value="'+this.columnRemark+'">';
-                        html+='<select class="col-md-1" name="dictType">'+optionsHtml+'</select>';
-                        html+='<input class="col-md-6" name="dictValue">';
-                        divTmp.append(html);
-                        exportForm.append(divTmp);
-                    });
-                    formTmp=exportForm;
-                    $('.modal-body').append(exportForm);
-                    $('#exampleModalScrollable').modal('show');
-                }else if(data){
-                    alert(data.msg);
-                }
+        if(nowTableName===table){
+            $('#exampleModalScrollable').modal('show');
+            return;
+        }else{
+            if(nowTableName){
+                formArr[nowTableName]='<form id="'+nowTableName+'" class="form-horizontal">'+$('#'+nowTableName).html()+'</form>';
+                $('#'+nowTableName).remove();
             }
-        });
+            nowTableName=table;
+        }
+        if(formArr[table]){
+            $('.modal-body').append(formArr[table]);
+            if(formDataArr[table]){
+                $.each(formDataArr[table], function () {
+                    $('#'+this.id).val(this.value);
+                });
+            }
+            $('#exampleModalScrollable').modal('show');
+        }else{
+            $.ajax({
+                type: "post",
+                url: "/queryTableInfo",
+                contentType: "application/json;charset=utf-8",
+                data:JSON.stringify(nowDB),
+                dataType: "json",
+                success:function (data) {
+                    if(data&&data.code==="000000"){
+                        var exportForm = $('<form id="'+table+'" class="form-horizontal">' +
+                                '<div class="row">' +
+                                '<label class="col-md-2 text-center">字段名</label>' +
+                                '<label class="col-md-1 text-center">字段类型</label>' +
+                                '<label class="col-md-2 text-center">字段注释</label>' +
+                                '<label class="col-md-1 text-center">字典值</label>' +
+                                '<label class="col-md-6 text-center">自定义</label>' +
+                                '</div></form>');
+                        $.each(data.result, function () {
+                            var divTmp=$('<div class="row"></div>' );
+                            var html='<input class="col-md-2 text-center" readonly name="columnName" value="'+this.columnName+'">';
+                            html+='<input class="col-md-1 text-center" readonly name="columnType" value="'+this.columnType+'">';
+                            html+='<input class="col-md-2 text-center" readonly name="columnRemark" value="'+this.columnRemark+'">';
+                            html+='<select id="'+table+'_'+this.columnName+'_dictType'+'" class="col-md-1" name="dictType">'+optionsHtml+'</select>';
+                            html+='<input  id="'+table+'_'+this.columnName+'_dictValue'+'" class="col-md-6" name="dictValue">';
+                            divTmp.append(html);
+                            exportForm.append(divTmp);
+                        });
+                        var numberHtml='<div class="row"><div class="col-md-8"></div><label class="text-center" for="number">生成数量 : </label>' +
+                                '<input type="number" id="'+table+'_number" name="number" placeholder="number" required value="1">' +
+                                '</div>';
+                        exportForm.append(numberHtml);
+                        $('.modal-body').append(exportForm);
+                        $('#exampleModalScrollable').modal('show');
+                    }else if(data){
+                        alert(data.msg);
+                    }
+                }
+            });
+        }
     }
 
 </script>

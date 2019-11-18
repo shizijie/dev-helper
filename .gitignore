@@ -14,6 +14,7 @@
 */target/
 target/
 buildfile/
+sqlfile/
  
 # Gradle files
 .gradle/
