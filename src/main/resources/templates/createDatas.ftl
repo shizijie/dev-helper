@@ -12,7 +12,7 @@
 </head>
 <body>
     <h1 class="text-center ">CREATE DATAS</h1>
-    <form class="form-horizontal">
+    <form id="dbForm" class="form-horizontal">
         <div class="form-group">
             <label class="col-sm-2 control-label" for="url">url（数据库连接url）</label>
             <div class="col-sm-8">
@@ -53,8 +53,8 @@
     <table id="table"></table>
     <!-- 模态框 -->
     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalScrollable">test</button>
-    <div class="modal fade" id="exampleModalScrollable" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable" role="document">
+    <div class="modal fade bd-example-modal-xl" id="exampleModalScrollable" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
+        <div class="modal-dialog" style="width:90%" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalScrollableTitle">表造数</h5>
@@ -63,23 +63,56 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <table>
-                        <tr><td>123</td></tr>
-                        <tr><td>345</td></tr>
-                    </table>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Save changes</button>
+                    <button type="button" class="btn btn-primary" onclick="createDatas()">创建数据</button>
                 </div>
             </div>
         </div>
     </div>
 </body>
 <script>
+    var nowDB={}
+    var formTmp;
+    var optionsHtml;
+    listDataEnum();
+
+    $('#exampleModalScrollable').on('hide.bs.modal', function () {
+        if(formTmp){
+            formTmp.remove();
+        }
+    });
+    function listDataEnum() {
+        $.ajax({
+            type: "get",
+            url: "/listDataEnum",
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            success:function (data) {
+                if(data&&data.code==="000000"){
+                    optionsHtml='';
+                    $.each(data.result, function () {
+                        optionsHtml+='<option value="'+this.enumCode+'">'+this.enumName+'</option>';
+                    });
+                }
+            }
+        });
+    }
+    
+    function createDatas() {
+        var d = {};
+        var t = $('#modelForm').serializeArray();
+        $.each(t, function () {
+            d[this.name] = this.value;
+        });
+        console.log(d);
+        console.log(t);
+    }
+    
     function checkConnection() {
         var d = {};
-        var t = $('form').serializeArray();
+        var t = $('#dbForm').serializeArray();
         $.each(t, function () {
             d[this.name] = this.value;
         });
@@ -95,6 +128,7 @@
                     var temp={};
                     $.each(t, function () {
                         temp[this.name] = this.value;
+                        nowDB[this.name] = this.value;
                         $("#"+this.name).attr("disabled",true);
                     });
                     $("#checkConnection").attr("disabled",true);
@@ -138,9 +172,7 @@
                 return res.result;
             },
             onClickRow: function (row) {
-                console.log("click:" + row.tableName)
-                console.log("click:" + row.columnsName)
-                $('#exampleModal').modal('show')
+                queryTableInfo(row.tableName);
             },
             columns: [{
                 field: 'tableName',
@@ -149,6 +181,44 @@
                 field: 'columnsName',
                 title: '字段名'
             },]
+        });
+    }
+
+    function queryTableInfo(table) {
+        nowDB['tableName']=table;
+        $.ajax({
+            type: "post",
+            url: "/queryTableInfo",
+            contentType: "application/json;charset=utf-8",
+            data:JSON.stringify(nowDB),
+            dataType: "json",
+            success:function (data) {
+                if(data&&data.code==="000000"){
+                    var exportForm = $('<form id="modelForm" class="form-horizontal">' +
+                            '<div class="row">' +
+                            '<label class="col-md-2 text-center">字段名</label>' +
+                            '<label class="col-md-1 text-center">字段类型</label>' +
+                            '<label class="col-md-2 text-center">字段注释</label>' +
+                            '<label class="col-md-1 text-center">字典值</label>' +
+                            '<label class="col-md-6 text-center">自定义</label>' +
+                            '</div></form>');
+                    $.each(data.result, function () {
+                        var divTmp=$('<div class="row"></div>' );
+                        var html='<input class="col-md-2 text-center" readonly name="columnName" value="'+this.columnName+'">';
+                        html+='<input class="col-md-1 text-center" readonly name="columnType" value="'+this.columnType+'">';
+                        html+='<input class="col-md-2 text-center" readonly name="columnRemark" value="'+this.columnRemark+'">';
+                        html+='<select class="col-md-1" name="dictType">'+optionsHtml+'</select>';
+                        html+='<input class="col-md-6" name="dictValue">';
+                        divTmp.append(html);
+                        exportForm.append(divTmp);
+                    });
+                    formTmp=exportForm;
+                    $('.modal-body').append(exportForm);
+                    $('#exampleModalScrollable').modal('show');
+                }else if(data){
+                    alert(data.msg);
+                }
+            }
         });
     }
 

@@ -1,11 +1,14 @@
 package com.shizijie.dev.helper.mybatis.web;
 
 import com.shizijie.dev.helper.common.BaseController;
+import com.shizijie.dev.helper.common.DataEnum;
 import com.shizijie.dev.helper.common.ResponseBean;
 import com.shizijie.dev.helper.mybatis.service.CreateDatasService;
 import com.shizijie.dev.helper.mybatis.service.GetJavaFilesService;
+import com.shizijie.dev.helper.mybatis.web.dto.ListDataEnumDTO;
 import com.shizijie.dev.helper.mybatis.web.vo.CheckConnectionVO;
 import com.shizijie.dev.helper.mybatis.web.vo.GetJavaFilesVO;
+import com.shizijie.dev.helper.mybatis.web.vo.QueryTableInfoVO;
 import com.shizijie.dev.helper.utils.DataSourcesUtils;
 import com.shizijie.dev.helper.utils.FileUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +53,24 @@ public class MybatisController extends BaseController{
     @PostMapping("/listTableByConnection")
     public ResponseBean listTableByConnection(@Validated @RequestBody CheckConnectionVO vo){
         return success(createDatasService.listTableByConnection(vo));
+    }
+
+    @PostMapping("/queryTableInfo")
+    public ResponseBean queryTableInfo(@Validated @RequestBody QueryTableInfoVO vo){
+        return success(createDatasService.queryTableInfo(vo));
+    }
+
+    @GetMapping("/listDataEnum")
+    public ResponseBean listDataEnum(){
+        List<ListDataEnumDTO> list=new ArrayList<>();
+        ListDataEnumDTO dto=null;
+        for(DataEnum dataEnum:DataEnum.values()){
+            dto=new ListDataEnumDTO();
+            dto.setEnumCode(dataEnum.getCode());
+            dto.setEnumName(dataEnum.getName());
+            list.add(dto);
+        }
+        return success(list);
     }
 
 }
