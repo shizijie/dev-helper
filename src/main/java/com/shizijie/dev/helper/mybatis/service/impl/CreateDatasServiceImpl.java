@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.sql.*;
 import java.util.*;
@@ -119,6 +120,10 @@ public class CreateDatasServiceImpl implements CreateDatasService {
             }
             StringBuffer sb=new StringBuffer();
             while (vo.getNumber()>0){
+                if(CollectionUtils.isEmpty(listColumns)){
+                    listColumns=new ArrayList<>(1);
+                    listColumns.add("1");
+                }
                 for(String sqlColumn:listColumns){
                     String tmpsql=SQL.replace(TABLE_NAME,vo.getTableName());
                     List<String> columns=new ArrayList<>(vo.getColumnName().size());
@@ -175,6 +180,9 @@ public class CreateDatasServiceImpl implements CreateDatasService {
                                 datas.add("'"+sqlColumn+"'");
                                 break;
                             }
+                            case DB_FUNCTION:
+                                datas.add(vo.getDictValue().get(i)+"");
+                                break;
                         }
                     }
                     sb.append(tmpsql.replace(TABLE_COLUMNS_ARR,StringUtils.join(columns,","))

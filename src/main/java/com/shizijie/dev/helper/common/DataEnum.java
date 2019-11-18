@@ -18,7 +18,8 @@ public enum DataEnum {
     UUID("UUID","uuid"),
     RONDOM_NUM("RONDOM_NUM","随机数"),
     FIXED_VALUE("FIXED_VALUE","固定值"),
-    SQL_VALUE("SQL_VALUE","db字段值");
+    SQL_VALUE("SQL_VALUE","db字段值"),
+    DB_FUNCTION("DB_FUNCTION","数据库函数");
     protected String code;
     protected String name;
     private static final Map<String,DataEnum> MAP=new HashMap<>(4);

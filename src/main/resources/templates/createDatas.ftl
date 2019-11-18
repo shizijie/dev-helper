@@ -77,6 +77,7 @@
     var formArr={};
     var formDataArr={};
     var optionsHtml;
+    var jdbcConf;
     listDataEnum();
     //关闭时触发
     function closeModel(){
@@ -141,15 +142,14 @@
                 request['number']=this.value;
             }
         });
+        $.each(jdbcConf, function () {
+            request[this.name] = this.value;
+        });
         request['columnName']=columnName;
         request['columnType']=columnType;
         request['dictType']=dictType;
         request['dictValue']=dictValue;
         request['tableName']=nowTableName;
-        var db = $('#dbForm').serializeArray();
-        $.each(db, function () {
-            request[this.name] = this.value;
-        });
         $.ajax({
             type: "post",
             url: "/getDataSql",
@@ -157,6 +157,7 @@
             data:JSON.stringify(request),
             dataType: "json",
             success:function (data) {
+                console.log(data);
                 if(data&&data.code==="000000"){
                     closeModel();
                 }else if(data){
@@ -182,12 +183,13 @@
                 if(data&&data.code==="000000"){
                     //禁用form表单
                     var temp={};
+                    jdbcConf=t;
                     $.each(t, function () {
                         temp[this.name] = this.value;
                         nowDB[this.name] = this.value;
-                        $("#"+this.name).attr("readonly",true);
+                        $("#"+this.name).attr("disabled",true);
                     });
-                    $("#checkConnection").attr("readonly",true);
+                    $("#checkConnection").attr("disabled",true);
                     showTable(temp);
                 }else if(data){
                     alert(data.msg);
