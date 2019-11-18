@@ -13,7 +13,7 @@ import java.util.List;
  * @version 2019-11-15 上午10:44
  */
 public interface CreateDatasService {
-    String SQL="insert into TABLE_NAME (TABLE_COLUMNS_ARR) values (TABLE_DATAS)";
+    String SQL="insert into TABLE_NAME (TABLE_COLUMNS_ARR) values (TABLE_DATAS);";
 
     String TABLE_NAME="TABLE_NAME";
 
