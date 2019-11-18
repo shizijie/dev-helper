@@ -122,7 +122,7 @@ public class CreateDatasServiceImpl implements CreateDatasService {
             while (vo.getNumber()>0){
                 if(CollectionUtils.isEmpty(listColumns)){
                     listColumns=new ArrayList<>(1);
-                    listColumns.add("1");
+                    listColumns.add("null");
                 }
                 for(String sqlColumn:listColumns){
                     String tmpsql=SQL.replace(TABLE_NAME,vo.getTableName());
