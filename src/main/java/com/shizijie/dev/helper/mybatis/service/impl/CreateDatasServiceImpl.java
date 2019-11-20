@@ -76,7 +76,7 @@ public class CreateDatasServiceImpl implements CreateDatasService {
                     while (columns.next()){
                         dto=new QueryTableInfoDTO();
                         String columnName=columns.getString("COLUMN_NAME");
-                        String columnType=columns.getString("TYPE_NAME");
+                        String columnType=columns.getString("TYPE_NAME").toLowerCase();
                         String remark=columns.getString("REMARKS");
                         dto.setColumnName(columnName);
                         dto.setColumnType(columnType);
@@ -94,8 +94,6 @@ public class CreateDatasServiceImpl implements CreateDatasService {
 
     @Override
     public String getDataSql(GetDataSqlVO vo) {
-        PreparedStatement ps = null;
-        ResultSet result = null;
         List<String> listColumns=null;
         try (Connection connection= DataSourcesUtils.getConnection(vo.getUrl(),vo.getUsername(),vo.getPwd(),vo.getDriver())){
             if(connection==null){
@@ -103,18 +101,10 @@ public class CreateDatasServiceImpl implements CreateDatasService {
             }
             for(int i=0;i<vo.getColumnName().size();i++){
                 if(DataEnum.SQL_VALUE.getCode().equals(vo.getDictType().get(i))){
-                    ps = connection.prepareStatement(vo.getDictValue().get(i));
-                    result = ps.executeQuery();
                     if(listColumns==null){
-                        listColumns=new ArrayList<>(10001);
+                        listColumns=DataEnum.getDataByCode(vo.getDictType().get(i),vo.getDictValue().get(i),connection);
                     }else{
                         return "目前仅支持最多一个sql造数！";
-                    }
-                    while (result.next()) {
-                        if(listColumns.size()>10000){
-                            throw new SQLException("["+vo.getColumnName().get(i)+"]查询结果超过1W！");
-                        }
-                        listColumns.add(result.getString(1));
                     }
                 }
             }
@@ -130,59 +120,10 @@ public class CreateDatasServiceImpl implements CreateDatasService {
                     List<String> datas=new ArrayList<>(vo.getColumnName().size());
                     for(int i=0;i<vo.getColumnName().size();i++){
                         columns.add(vo.getColumnName().get(i));
-                        switch (DataEnum.getByCode(vo.getDictType().get(i))){
-                            //uuid
-                            case UUID:{
-                                datas.add("'"+UUID.randomUUID().toString().replace("-","").toLowerCase()+"'");
-                                break;
-                            }
-                            //随机数
-                            case RONDOM_NUM:{
-                                if(StringUtils.isBlank(vo.getDictValue().get(i))){
-                                    datas.add(new Random().nextInt((int)Math.pow(10,2))+"");
-                                }else if(vo.getDictValue().get(i).indexOf(",")!=-1){
-                                    String[] str=vo.getDictValue().get(i).split(",");
-                                    Integer start=2;
-                                    Integer end=2;
-                                    try {
-                                        start=Integer.parseInt(str[0]);
-                                    } catch (Exception e) {
-                                        start=2;
-                                    }
-                                    try {
-                                        end=Integer.parseInt(str[1]);
-                                    } catch (Exception e) {
-                                        end=2;
-                                    }
-                                    datas.add(new Random().nextInt((int)Math.pow(10,start))+"."+new Random().nextInt((int)Math.pow(10,end)));
-                                }else{
-                                    Integer num=2;
-                                    try {
-                                        num=Integer.parseInt(vo.getDictValue().get(i));
-                                    } catch (Exception e) {
-                                        num=2;
-                                    }
-                                    datas.add(new Random().nextInt((int)Math.pow(10,num))+"");
-                                }
-                                break;
-                            }
-                            //固定值
-                            case FIXED_VALUE:{
-                                if(StringUtils.isNotBlank(vo.getDictValue().get(i))){
-                                    datas.add("'"+vo.getDictValue().get(i)+"'");
-                                }else{
-                                    datas.add("null");
-                                }
-                                break;
-                            }
-                            //db字段值
-                            case SQL_VALUE:{
-                                datas.add("'"+sqlColumn+"'");
-                                break;
-                            }
-                            case DB_FUNCTION:
-                                datas.add(vo.getDictValue().get(i)+"");
-                                break;
+                        if(DataEnum.SQL_VALUE.getCode().equals(vo.getDictType().get(i))){
+                            datas.add("'"+sqlColumn+"'");
+                        }else{
+                            datas.add(DataEnum.getDataByCode(vo.getDictType().get(i),vo.getDictValue().get(i),null).get(0));
                         }
                     }
                     sb.append(tmpsql.replace(TABLE_COLUMNS_ARR,StringUtils.join(columns,","))

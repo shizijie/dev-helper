@@ -76,7 +76,7 @@
     var nowTableName;
     var formArr={};
     var formDataArr={};
-    var optionsHtml;
+    var dataEnumArr;
     var jdbcConf;
     listDataEnum();
     //关闭时触发
@@ -113,13 +113,45 @@
             dataType: "json",
             success:function (data) {
                 if(data&&data.code==="000000"){
-                    optionsHtml='';
-                    $.each(data.result, function () {
-                        optionsHtml+='<option value="'+this.enumCode+'">'+this.enumName+'</option>';
-                    });
+                    dataEnumArr=data.result;
+                    // optionsHtml='';
+                    // $.each(data.result, function () {
+                    //     optionsHtml+='<option value="'+this.enumCode+'">'+this.enumName+'</option>';
+                    // });
                 }
             }
         });
+    }
+
+    function getOptionHtml(columnType){
+        var optionsHtml='';
+        $.each(dataEnumArr, function () {
+            if(columnType==='timestamp'||columnType.indexOf("time")>=0||columnType.indexOf("date")>=0){
+                if(this.enumCode.indexOf("FUNC")==0||this.enumCode==="SQL_VALUE"){
+                    if(this.enumCode==="FUNC_TIMESTAMP"){
+                        optionsHtml+='<option value="'+this.enumCode+'" selected>'+this.enumName+'</option>';
+                    }else{
+                        optionsHtml+='<option value="'+this.enumCode+'">'+this.enumName+'</option>';
+                    }
+                }
+                if(this.enumCode==="SQL_VALUE"){
+                    optionsHtml+='<option value="'+this.enumCode+'">'+this.enumName+'</option>';
+                }
+            }else if(columnType.indexOf('int')>=0||columnType==='numeric'){
+                if(this.enumCode.indexOf("NUMBER")==0||this.enumCode==="SQL_VALUE"){
+                    if(this.enumCode==="NUMBER_RONDOM"){
+                        optionsHtml+='<option value="'+this.enumCode+'" selected>'+this.enumName+'</option>';
+                    }else{
+                        optionsHtml+='<option value="'+this.enumCode+'">'+this.enumName+'</option>';
+                    }
+                }
+            }else{
+                if(this.enumCode.indexOf("TEXT")==0||this.enumCode==="SQL_VALUE"){
+                    optionsHtml+='<option value="'+this.enumCode+'">'+this.enumName+'</option>';
+                }
+            }
+        });
+        return optionsHtml;
     }
     
     function createDatas() {
@@ -281,10 +313,10 @@
                                 '</div></form>');
                         $.each(data.result, function () {
                             var divTmp=$('<div class="row"></div>' );
-                            var html='<input class="col-md-2 text-center" readonly name="columnName" value="'+this.columnName+'">';
-                            html+='<input class="col-md-1 text-center" readonly name="columnType" value="'+this.columnType+'">';
-                            html+='<input class="col-md-2 text-center" readonly name="columnRemark" value="'+this.columnRemark+'">';
-                            html+='<select id="'+table+'_'+this.columnName+'_dictType'+'" class="col-md-1" name="dictType">'+optionsHtml+'</select>';
+                            var html='<input class="col-md-2 text-center" readonly name="columnName" title="'+this.columnName+'" value="'+this.columnName+'">';
+                            html+='<input class="col-md-1 text-center" readonly name="columnType" title="'+this.columnType+'" value="'+this.columnType+'">';
+                            html+='<input class="col-md-2 text-center" readonly name="columnRemark" title="'+this.columnRemark+'" value="'+this.columnRemark+'">';
+                            html+='<select id="'+table+'_'+this.columnName+'_dictType'+'" class="col-md-1" name="dictType">'+getOptionHtml(this.columnType)+'</select>';
                             html+='<input  id="'+table+'_'+this.columnName+'_dictValue'+'" class="col-md-6" name="dictValue">';
                             divTmp.append(html);
                             exportForm.append(divTmp);
