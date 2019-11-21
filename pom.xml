@@ -5,8 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>shizijie</groupId>
     <artifactId>dev-helper</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <version>1.1.1</version>
+    <modules>
+        <module>dev-helper-core</module>
+        <module>dev-helper-web</module>
+    </modules>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -26,6 +30,7 @@
         <bootstrap.version>3.3.5</bootstrap.version>
         <bootstrap.table.version>1.9.1</bootstrap.table.version>
         <jquery.version>3.4.1</jquery.version>
+        <lombok.version>1.18.6</lombok.version>
     </properties>
 
     <dependencies>
@@ -38,32 +43,9 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-context</artifactId>
-            <version>${spring.cloud.context.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>bootstrap</artifactId>
-            <version>${bootstrap.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>bootstrap-table</artifactId>
-            <version>${bootstrap.table.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>jquery</artifactId>
-            <version>${jquery.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sourceforge.nekohtml</groupId>
-            <artifactId>nekohtml</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -87,25 +69,6 @@
             <version>${commons.lang.version}</version>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>com.shizijie.dev.helper.DevHelperApplication</mainClass>
-                    <fork>true</fork>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 
     <!-- 仓库地址 -->
     <repositories>
