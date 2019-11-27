@@ -72,9 +72,12 @@
     </div>
 </body>
 <script>
+    //当前连接池信息
     var nowDB={};
     var nowTableName;
+    //保存打开模态框form信息
     var formArr={};
+    //form具体信息
     var formDataArr={};
     var dataEnumArr;
     var jdbcConf;
@@ -121,6 +124,21 @@
                 }
             }
         });
+    }
+
+    function addFunctionAlty(value, row, index) {
+        return [
+            '<button id="getJava" type="button" class="btn btn-default">获取java文件</button>',
+            '<button id="createDatas" type="button" class="btn btn-default">造数</button>',
+        ].join('');
+    }
+    window.operateEvents = {
+        'click #getJava': function (e, value, row, index) {
+            getJavaFiles(row.tableName);
+        },
+        'click #createDatas': function (e, value, row, index) {
+            queryTableInfo(row.tableName);
+        }
     }
 
     function getOptionHtml(columnType){
@@ -261,17 +279,42 @@
             responseHandler:function(res){
                 return res.result;
             },
-            onClickRow: function (row) {
-                queryTableInfo(row.tableName);
-            },
-            columns: [{
-                field: 'tableName',
-                title: '表名'
-            }, {
-                field: 'columnsName',
-                title: '字段名'
-            },]
+            // onClickRow: function (row) {
+            //     queryTableInfo(row.tableName);
+            // },
+            columns: [
+                {
+                    field: 'tableName',
+                    title: '表名'
+                },
+                {
+                    field: 'columnsName',
+                    title: '字段名'
+                },
+                {
+                    field: 'operate',
+                    title: '操作',
+                    events: operateEvents,//给按钮注册事件
+                    formatter: addFunctionAlty//表格中增加按钮
+                },
+            ]
         });
+    }
+
+    function getJavaFiles(table){
+        var url = "/getJavaFiles";
+        nowDB['tableName']=table;
+        var exportForm = $('<form method="post" action="'+url+'"></form>');
+        for(var i in nowDB){
+            var nameInput=$('<input>');
+            nameInput.attr('type','text');
+            nameInput.attr('name',i);
+            nameInput.attr('value',nowDB[i]);
+            exportForm.append(nameInput);
+        }
+        $(document.body).append(exportForm);
+        exportForm.submit();
+        exportForm.remove();
     }
 
     function queryTableInfo(table) {

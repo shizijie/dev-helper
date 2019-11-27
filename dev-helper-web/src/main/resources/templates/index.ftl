@@ -9,7 +9,7 @@
 </head>
 <body>
     <h1 class="text-center ">W E L C O M E !</h1>
-    <a class="btn btn-info" href="/getJavaFiles">获取实体</a>
+    <#--<a class="btn btn-info" href="/getJavaFiles">获取实体</a>-->
     <a class="btn btn-info" href="/createDatas">造数</a>
 </body>
 </html>
