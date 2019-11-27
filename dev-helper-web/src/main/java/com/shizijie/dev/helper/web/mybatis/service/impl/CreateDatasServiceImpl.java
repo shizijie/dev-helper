@@ -11,7 +11,7 @@ import com.shizijie.dev.helper.web.mybatis.web.vo.GetDataSqlVO;
 import com.shizijie.dev.helper.web.mybatis.web.vo.QueryTableInfoVO;
 import com.shizijie.dev.helper.web.mybatis.service.CreateDatasService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 

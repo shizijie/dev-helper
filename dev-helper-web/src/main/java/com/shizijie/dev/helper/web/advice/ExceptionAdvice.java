@@ -2,7 +2,7 @@ package com.shizijie.dev.helper.web.advice;
 
 import com.shizijie.dev.helper.web.common.BaseController;
 import com.shizijie.dev.helper.web.common.ResponseBean;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;

@@ -1,7 +1,7 @@
 package com.shizijie.dev.helper.web.route;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 
 /**
  * @author shizijie
@@ -9,18 +9,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
  */
 @Controller
 public class RouteController {
-    @RequestMapping("/index")
+    @GetMapping("/index")
     public String index(){
         return "index";
     }
 
-    @RequestMapping("/getJavaFiles")
+    @GetMapping("/getJavaFiles")
     public String getJavaFiles(){
         return "getJavaFiles";
     }
 
-    @RequestMapping("/createDatas")
+    @GetMapping("/createDatas")
     public String createDatas(){
         return "createDatas";
     }
+
+
 }

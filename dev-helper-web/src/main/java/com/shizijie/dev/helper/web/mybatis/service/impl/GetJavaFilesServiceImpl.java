@@ -6,7 +6,7 @@ import com.shizijie.dev.helper.core.utils.NameUtils;
 import com.shizijie.dev.helper.web.mybatis.service.GetJavaFilesService;
 import com.shizijie.dev.helper.web.mybatis.web.vo.GetJavaFilesVO;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
