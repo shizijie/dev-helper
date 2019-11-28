@@ -1,9 +1,6 @@
 package com.shizijie.dev.helper.core.mybatis;
 
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotNull;
@@ -21,6 +18,8 @@ public interface BaseMapperHelper<T> {
 
     String UPDATE="update TABLE_NAME set TABLE_DATAS";
 
+    String DELETE="delete from TABLE_NAME";
+
     @Insert(INSERT)
     int insert(@NotNull T t);
 
@@ -32,4 +31,7 @@ public interface BaseMapperHelper<T> {
 
     @Update(UPDATE)
     int update(@NotNull @Param("bean") T t,@Param("list")List<String> list);
+
+    @Delete(DELETE)
+    int delete(@NotNull @Param("bean") T t,@Param("list")List<String> list);
 }

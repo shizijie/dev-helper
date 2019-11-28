@@ -175,6 +175,24 @@ public class UserHelperUtils {
         return builder.build();
     };
 
+    public static HelperResult getDeleteSqlByObject(Object object, List<String> primary) {
+        HelperResult helperResult=new HelperResult();
+        String tableName=getTableNameByClass(object.getClass());
+        if(!CollectionUtils.isEmpty(primary)){
+            List<ParameterMapping> list=new ArrayList<>(primary.size());
+            List<String> condition=new ArrayList<>(primary.size());
+            for(String col:primary){
+                condition.add(NameUtils.humpToLine(col)+" = ? ");
+                list.add(INIT_PARAMETERMAPPING.apply("bean."+col));
+            }
+            helperResult.setParameterMappings(list);
+            helperResult.setNewSql(BaseMapperHelper.DELETE.replace("TABLE_NAME",tableName)+" where "+StringUtils.join(condition," and "));
+        }else{
+            helperResult.setNewSql(BaseMapperHelper.DELETE.replace("TABLE_NAME",tableName));
+        }
+        return helperResult;
+    }
+
     public static HelperResult getUpdateSqlByObject(Object object, List<String> primary) {
         HelperResult helperResult=new HelperResult();
         String tableName=getTableNameByClass(object.getClass());
@@ -215,4 +233,6 @@ public class UserHelperUtils {
         tableName=NameUtils.humpToLine(tableName);
         return tableName;
     }
+
+
 }

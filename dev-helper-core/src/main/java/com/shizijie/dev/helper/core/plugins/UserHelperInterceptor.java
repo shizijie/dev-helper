@@ -86,11 +86,22 @@ public class UserHelperInterceptor implements Interceptor {
                             }
                         }
                     }
-                }else if(BaseMapperHelper.class.isAssignableFrom(classType)&&BaseMapperHelper.SELECT.equals(oldSql)){
+                }else if(BaseMapperHelper.class.isAssignableFrom(classType)){
                     /** 查 */
-                    HelperResult helperResult=UserHelperUtils.getSelectSqlByObject(boundSql.getParameterObject(),boundSql.getParameterObject().getClass());
-                    ReflectUtils.setFieldValue(boundSql,"parameterMappings",helperResult.getParameterMappings());
-                    ReflectUtils.setFieldValue(boundSql,"sql",helperResult.getNewSql());
+                    if(BaseMapperHelper.SELECT.equals(oldSql)){
+                        HelperResult helperResult=UserHelperUtils.getSelectSqlByObject(boundSql.getParameterObject(),boundSql.getParameterObject().getClass());
+                        ReflectUtils.setFieldValue(boundSql,"parameterMappings",helperResult.getParameterMappings());
+                        ReflectUtils.setFieldValue(boundSql,"sql",helperResult.getNewSql());
+                    }
+                    /** 删 */
+                    else if(BaseMapperHelper.DELETE.equals(oldSql)){
+                        if(boundSql.getParameterObject()!=null&&boundSql.getParameterObject() instanceof Map){
+                            Map<String,Object> paramMap= (Map<String, Object>) boundSql.getParameterObject();
+                            HelperResult helperResult=UserHelperUtils.getDeleteSqlByObject(paramMap.get("bean"),(List<String>)paramMap.get("list"));
+                            ReflectUtils.setFieldValue(boundSql,"parameterMappings",helperResult.getParameterMappings());
+                            ReflectUtils.setFieldValue(boundSql,"sql",helperResult.getNewSql());
+                        }
+                    }
                 }
                 return invocation.proceed();
             } catch (Exception e) {
