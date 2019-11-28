@@ -23,6 +23,12 @@ public class NameUtils {
 
     /** 驼峰转下划线 */
     public static String humpToLine(String str) {
-        return str.replaceAll("[A-Z]", "_$0").toLowerCase();
+        if(str!=null){
+            if(str.length()>=1){
+                str=str.substring(0,1).toLowerCase().concat(str.substring(1));
+            }
+            return str.replaceAll("[A-Z]", "_$0").toLowerCase();
+        }
+        return str;
     }
 }

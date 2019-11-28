@@ -11,13 +11,12 @@ import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.plugin.*;
+import org.springframework.util.CollectionUtils;
 
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * @author shizijie
@@ -44,34 +43,56 @@ public class UserHelperInterceptor implements Interceptor {
             try {
                 RoutingStatementHandler handler= (RoutingStatementHandler) invocation.getTarget();
                 StatementHandler delegate= (StatementHandler) ReflectUtils.getFieldValue(handler,"delegate");
-                MappedStatement mappedStatement=(MappedStatement)ReflectUtils.getFieldValue(handler,"mappedStatement");
+                MappedStatement mappedStatement=(MappedStatement)ReflectUtils.getFieldValue(delegate,"mappedStatement");
                 String type=mappedStatement.getSqlCommandType().name();
+                BoundSql boundSql=delegate.getBoundSql();
+                String oldSql=boundSql.getSql();
+                Class<?> classType=Class.forName(mappedStatement.getId().substring(0,mappedStatement.getId().lastIndexOf(".")));
                 if(INSERT.equalsIgnoreCase(type)||UPDATE.equalsIgnoreCase(type)){
-                    BoundSql boundSql=delegate.getBoundSql();
-                    Class<?> classType=Class.forName(mappedStatement.getId().substring(0,mappedStatement.getId().lastIndexOf(".")));
                     String methodName=mappedStatement.getId().substring(mappedStatement.getId().lastIndexOf(".")+1);
 
-                    if(BaseMapperHelper.class.isAssignableFrom(classType)&&"insert".equalsIgnoreCase(type)){
-                        HelperResult helperResult=UserHelperUtils.getInsertSqlByObject(boundSql.getParameterObject(),boundSql.getParameterObject().getClass());
-                        String username= DevHelperConfiguration.userHelperApi.getUser("");
-                        String newSql= UserHelperUtils.getNewSql(helperResult.getNewSql(),username,type);
-                        ReflectUtils.setFieldValue(boundSql,"parameterMappings",helperResult.getParameterMappings());
-                        ReflectUtils.setFieldValue(boundSql,"sql",newSql);
-                        return invocation.proceed();
-                    }
-                    for(Method method:classType.getDeclaredMethods()){
-                        if(method.isAnnotationPresent(UserHelper.class)&&method.getName().equals(methodName)){
-                            String oldSql=boundSql.getSql();
-                            UserHelper userHelper=method.getAnnotation(UserHelper.class);
-                            String username= DevHelperConfiguration.userHelperApi.getUser(userHelper.value());
-                            String newSql= UserHelperUtils.getNewSql(oldSql,username,type);
-                            ReflectUtils.setFieldValue(boundSql,"sql",newSql);
-                            return invocation.proceed();
+                    if(BaseMapperHelper.class.isAssignableFrom(classType)){
+                        /** 增 */
+                        if(BaseMapperHelper.INSERT.equals(oldSql)){
+                            if(boundSql.getParameterObject()!=null){
+                                HelperResult helperResult=UserHelperUtils.getInsertSqlByObject(boundSql.getParameterObject(),boundSql.getParameterObject().getClass());
+                                String username= DevHelperConfiguration.userHelperApi.getUser(null);
+                                String newSql= UserHelperUtils.getNewSql(helperResult.getNewSql(),username,type);
+                                ReflectUtils.setFieldValue(boundSql,"parameterMappings",helperResult.getParameterMappings());
+                                ReflectUtils.setFieldValue(boundSql,"sql",newSql);
+                            }
+                        }
+                        /** 改 */
+                        else if(BaseMapperHelper.UPDATE.equals(oldSql)){
+                            if(boundSql.getParameterObject()!=null&&boundSql.getParameterObject() instanceof Map){
+                                Map<String,Object> paramMap= (Map<String, Object>) boundSql.getParameterObject();
+                                HelperResult helperResult=UserHelperUtils.getUpdateSqlByObject(paramMap.get("bean"),(List<String>)paramMap.get("list"));
+                                String username= DevHelperConfiguration.userHelperApi.getUser(null);
+                                String newSql= UserHelperUtils.getNewSql(helperResult.getNewSql(),username,type);
+                                ReflectUtils.setFieldValue(boundSql,"parameterMappings",helperResult.getParameterMappings());
+                                ReflectUtils.setFieldValue(boundSql,"sql",newSql);
+                            }
+                        }
+
+                    }else{
+                        /** userHelper 增/改 */
+                        for(Method method:classType.getDeclaredMethods()){
+                            if(method.isAnnotationPresent(UserHelper.class)&&method.getName().equals(methodName)){
+                                UserHelper userHelper=method.getAnnotation(UserHelper.class);
+                                String username= DevHelperConfiguration.userHelperApi.getUser(userHelper.value());
+                                String newSql= UserHelperUtils.getNewSql(oldSql,username,type);
+                                ReflectUtils.setFieldValue(boundSql,"sql",newSql);
+                                break;
+                            }
                         }
                     }
-                }else if(SELECT.equalsIgnoreCase(type)){
-
+                }else if(BaseMapperHelper.class.isAssignableFrom(classType)&&BaseMapperHelper.SELECT.equals(oldSql)){
+                    /** 查 */
+                    HelperResult helperResult=UserHelperUtils.getSelectSqlByObject(boundSql.getParameterObject(),boundSql.getParameterObject().getClass());
+                    ReflectUtils.setFieldValue(boundSql,"parameterMappings",helperResult.getParameterMappings());
+                    ReflectUtils.setFieldValue(boundSql,"sql",helperResult.getNewSql());
                 }
+                return invocation.proceed();
             } catch (Exception e) {
                 log.error(e.getMessage(),e);
                 throw new SQLException(e.getMessage(),e);
@@ -91,10 +112,11 @@ public class UserHelperInterceptor implements Interceptor {
         userHelperBean.setCreatedDate(properties.getProperty("createdDate"));
         userHelperBean.setUpdatedBy(properties.getProperty("updatedBy"));
         userHelperBean.setUpdatedDate(properties.getProperty("updatedDate"));
-        HELPER_COLUMNS.add(properties.getProperty("createdBy"));
-        HELPER_COLUMNS.add(properties.getProperty("createdDate"));
-        HELPER_COLUMNS.add(properties.getProperty("updatedBy"));
-        HELPER_COLUMNS.add(properties.getProperty("updatedDate"));
-
+        if(CollectionUtils.isEmpty(HELPER_COLUMNS)){
+            HELPER_COLUMNS.add(properties.getProperty("createdBy"));
+            HELPER_COLUMNS.add(properties.getProperty("createdDate"));
+            HELPER_COLUMNS.add(properties.getProperty("updatedBy"));
+            HELPER_COLUMNS.add(properties.getProperty("updatedDate"));
+        }
     }
 }

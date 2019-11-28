@@ -57,6 +57,10 @@ public class UserHelperUtils {
     private static String getNewInsertSql(String oldSql, Map<String, String> columnMap) {
         List<String> column=new ArrayList<>(2);
         List<String> data=new ArrayList<>(2);
+        columnMap.forEach((k,v)->{
+            column.add(k);
+            data.add(v);
+        });
         String[] sqlArr=oldSql.replace("\n"," ").split(" ");
         StringBuffer newSql=new StringBuffer();
         int count=0;
@@ -94,31 +98,52 @@ public class UserHelperUtils {
             }
         }else if(UserHelperInterceptor.UPDATE.equalsIgnoreCase(sqlType)){
             subSql=sql.toLowerCase().replace("\n"," ");
-            subSql=subSql.substring(subSql.indexOf(" set "),subSql.indexOf(" where "));
+            if(subSql.indexOf("where")>=0){
+                subSql=subSql.substring(subSql.indexOf(" set "),subSql.indexOf(" where "));
+            }else{
+                subSql=subSql.substring(subSql.indexOf(" set "));
+            }
         }
         if(StringUtils.isNotBlank(subSql)){
             if(subSql.indexOf(userHelperBean.getUpdatedBy())==-1){
                 columnMap.put(userHelperBean.getUpdatedBy(),"'"+username+"'");
             }
             if(subSql.indexOf(userHelperBean.getUpdatedDate())==-1){
-                columnMap.put(userHelperBean.getUpdatedBy(),SYS_DATE);
+                columnMap.put(userHelperBean.getUpdatedDate(),SYS_DATE);
             }
         }
     }
 
-    public static HelperResult getInsertSqlByObject(Object object, Class<?> clazz) {
-        if(object==null){
-            return null;
-        }
+    public static HelperResult getSelectSqlByObject(Object object, Class<?> clazz) {
         HelperResult helperResult=new HelperResult();
-        String tableName=clazz.getName();
-        tableName=tableName.substring(tableName.lastIndexOf(".")+1);
-        for(String str:REMOVE_NAME){
-            if(tableName.endsWith(str)){
-                tableName=tableName.substring(0,tableName.length()-str.length());
+        String tableName=getTableNameByClass(clazz);
+        Field[] fields=clazz.getDeclaredFields();
+        List<String> columnList=new ArrayList<>(fields.length);
+        List<String> dataList=new ArrayList<>(fields.length);
+        List<ParameterMapping> list=new ArrayList<>(fields.length);
+        for(Field field:fields){
+            String columnName=NameUtils.humpToLine(field.getName());
+            columnList.add(columnName);
+            if(ReflectUtils.getFieldValue(object,field.getName())!=null){
+                dataList.add(columnName+" = ? ");
+                list.add(INIT_PARAMETERMAPPING.apply(field.getName()));
             }
         }
-        tableName=NameUtils.humpToLine(tableName);
+        if(CollectionUtils.isEmpty(dataList)){
+            helperResult.setNewSql(BaseMapperHelper.SELECT.replace("TABLE_NAME",tableName)
+                    .replace("TABLE_COLUMNS",StringUtils.join(columnList,",")));
+        }else{
+            helperResult.setNewSql(BaseMapperHelper.SELECT.replace("TABLE_NAME",tableName)
+                    .replace("TABLE_COLUMNS",StringUtils.join(columnList,","))
+                    +" where "+StringUtils.join(dataList," and "));
+            helperResult.setParameterMappings(list);
+        }
+        return helperResult;
+    }
+
+    public static HelperResult getInsertSqlByObject(Object object, Class<?> clazz) {
+        HelperResult helperResult=new HelperResult();
+        String tableName=getTableNameByClass(clazz);
         Field[] fields=clazz.getDeclaredFields();
         List<String> columnList=new ArrayList<>(fields.length);
         List<String> dataList=new ArrayList<>(fields.length);
@@ -149,4 +174,45 @@ public class UserHelperUtils {
         ParameterMapping.Builder builder=new ParameterMapping.Builder(c,a,Object.class);
         return builder.build();
     };
+
+    public static HelperResult getUpdateSqlByObject(Object object, List<String> primary) {
+        HelperResult helperResult=new HelperResult();
+        String tableName=getTableNameByClass(object.getClass());
+        Field[] fields=object.getClass().getDeclaredFields();
+        List<String> dataList=new ArrayList<>(fields.length);
+        List<ParameterMapping> list=new ArrayList<>(fields.length);
+        for(Field field:fields){
+            String columnName=NameUtils.humpToLine(field.getName());
+            if(ReflectUtils.getFieldValue(object,field.getName())!=null){
+                dataList.add(columnName+" = ? ");
+                list.add(INIT_PARAMETERMAPPING.apply("bean."+field.getName()));
+            }
+        }
+        if(!CollectionUtils.isEmpty(primary)){
+            List<String> condition=new ArrayList<>(primary.size());
+            for(String col:primary){
+                condition.add(col+" = ? ");
+                list.add(INIT_PARAMETERMAPPING.apply("bean."+col));
+            }
+            helperResult.setNewSql(BaseMapperHelper.UPDATE.replace("TABLE_NAME",tableName)
+                    .replace("TABLE_DATAS",StringUtils.join(dataList,","))+" where "+StringUtils.join(condition," and "));
+        }else{
+            helperResult.setNewSql(BaseMapperHelper.UPDATE.replace("TABLE_NAME",tableName)
+                    .replace("TABLE_DATAS",StringUtils.join(dataList,",")));
+        }
+        helperResult.setParameterMappings(list);
+        return helperResult;
+    }
+
+    private static String getTableNameByClass(Class clazz){
+        String tableName=clazz.getName();
+        tableName=tableName.substring(tableName.lastIndexOf(".")+1);
+        for(String str:REMOVE_NAME){
+            if(tableName.endsWith(str)){
+                tableName=tableName.substring(0,tableName.length()-str.length());
+            }
+        }
+        tableName=NameUtils.humpToLine(tableName);
+        return tableName;
+    }
 }
