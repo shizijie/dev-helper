@@ -1,5 +1,6 @@
 package com.shizijie.dev.helper.web.mybatis.web;
 
+import com.shizijie.dev.helper.core.api.user.RedisMqHandler;
 import com.shizijie.dev.helper.core.utils.DataSourcesUtils;
 import com.shizijie.dev.helper.core.utils.FileUtils;
 import com.shizijie.dev.helper.web.mybatis.web.vo.GetJavaFilesVO;
@@ -78,6 +79,17 @@ public class MybatisController extends BaseController {
     @PostMapping("/getDataSql")
     public ResponseBean getDataSql(@Validated @RequestBody GetDataSqlVO vo){
         return back(createDatasService.getDataSql(vo));
+    }
+
+
+    @Autowired
+    private RedisMqHandler redisMqHandler;
+
+    @GetMapping("/test")
+    public void test(){
+        ListDataEnumDTO dto=new ListDataEnumDTO();
+        dto.setEnumName("xl");
+        redisMqHandler.producer("xltopic",dto);
     }
 
 }

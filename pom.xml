@@ -10,6 +10,7 @@
     <modules>
         <module>dev-helper-core</module>
         <module>dev-helper-web</module>
+        <module>eureka</module>
     </modules>
 
     <parent>

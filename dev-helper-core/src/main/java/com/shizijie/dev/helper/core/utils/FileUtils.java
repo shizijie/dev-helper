@@ -13,9 +13,8 @@ import java.util.zip.ZipOutputStream;
  * @author shizijie
  * @version 2019-11-12 下午7:39
  */
-@Slf4j
 public class FileUtils {
-    public static void downloadBatchByFile(HttpServletResponse response, Path dir, String zipName){
+    public static void downloadBatchByFile(HttpServletResponse response, Path dir, String zipName) {
         try(DirectoryStream<Path> stream = Files.newDirectoryStream(dir)){
             response.setContentType("application/x-msdownload");
             response.setHeader("content-disposition", "attachment;filename="+ URLEncoder.encode(zipName, "utf-8"));
@@ -38,11 +37,11 @@ public class FileUtils {
             }
             bos.close();
         }catch(Exception e){
-            log.error(e.getMessage(),e);
+            e.printStackTrace();
         }
     }
 
-    public static void createFile(String path,String fileName,byte[] content){
+    public static void createFile(String path,String fileName,byte[] content) {
         Path outPath=Paths.get(path);
         if(!Files.exists(outPath)){
             new File(Paths.get(path).toUri()).mkdirs();
@@ -52,13 +51,13 @@ public class FileUtils {
             try {
                 Files.createFile(out);
             } catch (IOException e) {
-                log.error(e.getMessage(),e);
+                e.printStackTrace();
             }
         }
         try {
             Files.write(out,content, StandardOpenOption.WRITE);
         } catch (IOException e) {
-            log.error(e.getMessage(),e);
+            e.printStackTrace();
         }
     }
 

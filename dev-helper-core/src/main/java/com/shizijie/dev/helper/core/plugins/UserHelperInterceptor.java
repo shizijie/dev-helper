@@ -25,7 +25,6 @@ import java.util.*;
 @Intercepts(value = {
         @Signature(type = StatementHandler.class,method = "prepare",args = {Connection.class,Integer.class})
 })
-@Slf4j
 public class UserHelperInterceptor implements Interceptor {
     public final static UserHelperBean userHelperBean=new UserHelperBean();
 
@@ -105,7 +104,6 @@ public class UserHelperInterceptor implements Interceptor {
                 }
                 return invocation.proceed();
             } catch (Exception e) {
-                log.error(e.getMessage(),e);
                 throw new SQLException(e.getMessage(),e);
             }
         }

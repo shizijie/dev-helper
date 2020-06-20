@@ -2,6 +2,13 @@ server:
   #端口号
   port: 8999
 spring:
+  #redis
+  redis:
+    database: 0
+    host: 127.0.0.1
+    password: foobared
+    port: 36379
+
   freemarker:
     allow-request-override: false
     allow-session-override: false
