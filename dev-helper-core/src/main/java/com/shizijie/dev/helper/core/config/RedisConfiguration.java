@@ -57,11 +57,11 @@ public class RedisConfiguration extends CachingConfigurerSupport {
 
     //订阅监听
     @Bean
-    RedisMessageListenerContainer container(RedisConnectionFactory connectionFactory, MessageListenerAdapter processorOne){
+    RedisMessageListenerContainer container(RedisConnectionFactory connectionFactory, MessageListenerAdapter listenerAdapter){
         final RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         //订阅多个频道
-        container.addMessageListener(processorOne,new PatternTopic(RedisMqHandler.TOPIC));
+        container.addMessageListener(listenerAdapter,new PatternTopic(RedisMqHandler.TOPIC));
         container.setTopicSerializer(RedisSerializer.string());
 
 
@@ -88,7 +88,7 @@ public class RedisConfiguration extends CachingConfigurerSupport {
 
     //接收
     @Bean
-    public MessageListenerAdapter processorOne() {
+    public MessageListenerAdapter listenerAdapter() {
         MessageListenerAdapter adapter = new MessageListenerAdapter(redisMqHandler,"pull");
         GenericJackson2JsonRedisSerializer jsonRedisSerializer = new GenericJackson2JsonRedisSerializer();
         adapter.setSerializer(jsonRedisSerializer);
