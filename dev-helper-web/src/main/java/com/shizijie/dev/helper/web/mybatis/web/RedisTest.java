@@ -5,6 +5,8 @@ import com.shizijie.dev.helper.core.api.user.RedisMqHandler;
 import com.shizijie.dev.helper.web.mybatis.web.dto.ListDataEnumDTO;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * @author shizijie
  * @version 2020-06-20 下午4:44
@@ -15,9 +17,13 @@ public class RedisTest extends RedisMqHandler{
     @Override
     public void consumer(String topic, Object value) {
         String thread=Thread.currentThread().getName();
-        System.out.println(thread+" topic: "+topic);
         ListDataEnumDTO dto=parseObject(value,ListDataEnumDTO.class);
-        System.out.println(thread+" value: "+JSON.toJSON(dto));
-
+        System.out.println(thread+" topic: "+topic+" value: "+JSON.toJSON(dto)+"======start");
+        try {
+            TimeUnit.SECONDS.sleep(5);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println(thread+" topic: "+topic+" value: "+JSON.toJSON(dto)+"======end");
     }
 }

@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -18,13 +20,17 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.scripting.ScriptSource;
 import org.springframework.scripting.support.ResourceScriptSource;
+import org.springframework.util.CollectionUtils;
 
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.concurrent.TimeUnit;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * @author shizijie
@@ -33,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class RedisMqHandler{
     public static final String TOPIC="REDIS_MQ_HANDLER";
 
-    public static final String RUNING="_RUNING";
+    public static final String RUNING="_RUNING_";
 
     public static final long EXPIRE_SECOND=60L;
 
@@ -41,9 +47,15 @@ public abstract class RedisMqHandler{
 
     private static final int SIZE=-2;
 
+    private static final int POOL_SIZE=Runtime.getRuntime().availableProcessors()*2;
+
     private final ScriptSource PUSH=new ResourceScriptSource(new ClassPathResource("redis/push.lua"));
 
     private final ScriptSource LOCK=new ResourceScriptSource(new ClassPathResource("redis/lock.lua"));
+
+    private final ThreadPoolExecutor THREAD_POOL= new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE,
+            0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>());
 
     private Gson gson=new Gson();
     @Autowired
@@ -65,43 +77,88 @@ public abstract class RedisMqHandler{
         DefaultRedisScript defaultRedisScript = new DefaultRedisScript();
         defaultRedisScript.setScriptSource(PUSH);
         defaultRedisScript.setResultType(Long.class);
-        Object result=redisTemplate.execute(defaultRedisScript, Arrays.asList(topic,TOPIC), OFFSET,SIZE,value,gson.toJson(new Message(topic,value)));
+        Object result=redisTemplate.execute(defaultRedisScript, Arrays.asList(topic,TOPIC,String.valueOf(OFFSET),String.valueOf(SIZE)),value,gson.toJson(new Message(topic,value)));
         return SUCCESS.equals(result);
     }
     public void pull(String value){
         Message message=gson.fromJson(value, Message.class);
-        boolean needUpdate=false;
+        String lockKey=message.getTopic()+RUNING+getIpAndPort();
+        boolean needUpdate=lock(lockKey,EXPIRE_SECOND);
+        if(!needUpdate){
+            System.out.println("<<<<<<<<<< out "+value);
+            //系统正在执行中！
+            return;
+        }
+        System.out.println(">>>>>>>>>>>>>>>>> topic+"+value);
         try {
-            needUpdate=lock(message.getTopic()+RUNING,EXPIRE_SECOND);
             while (true){
-
-                Integer total= (Integer) redisTemplate.opsForHash().get(message.getTopic(),String.valueOf(SIZE));
-                if(total==null){
-                    break;
-                }
-                Integer index= (Integer) redisTemplate.opsForHash().get(message.getTopic(),String.valueOf(OFFSET));
-                if(index==null){
-                    break;
-                }
-                if(total>index){
-                    Object val=redisTemplate.opsForHash().get(message.getTopic(),String.valueOf(index-1));
-                    //consumer(message.getTopic(),gson.fromJson(gson.toJson(message.getValue()),Object.class));
-                    consumer(message.getTopic(),val);
-                    System.out.println("-------------------end---index:  "+index);
-                    redisTemplate.opsForHash().increment(message.getTopic(),String.valueOf(OFFSET),1);
+                if(checkTopicRuning(message.topic)!=null){
+                    int num=THREAD_POOL.getCorePoolSize()-THREAD_POOL.getActiveCount();
+                    if(num==0){
+                        sleep(lockKey);
+                        continue;
+                    }
+                    //消费开始
+                    List<Future> result=new ArrayList<>(4);
+                    for(int i=1;i<=num;i++){
+                        Integer index=checkTopicRuning(message.topic);
+                        if(index!=null){
+                            Object val=redisTemplate.opsForHash().get(message.getTopic(),String.valueOf(index));
+                            //consumer(message.getTopic(),gson.fromJson(gson.toJson(message.getValue()),Object.class));
+                            result.add(THREAD_POOL.submit(()->{
+                                consumer(message.getTopic(),val);
+                            }));
+                            //消费结束
+                            redisTemplate.opsForHash().increment(message.getTopic(),String.valueOf(OFFSET),1);
+                        }
+                    }
+                    if(!CollectionUtils.isEmpty(result)){
+                        for(Future future:result){
+                            while (true){
+                                if(future.isDone()&&!future.isCancelled()){
+                                    future.get();
+                                    break;
+                                }
+                                sleep(lockKey);
+                            }
+                        }
+                    }
+                    sleep(lockKey);
                 }else{
                     break;
                 }
-                if(needUpdate){
-                    redisTemplate.expire(message.getTopic()+RUNING,EXPIRE_SECOND, TimeUnit.SECONDS);
-                }
             }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         } finally {
             if(needUpdate){
-                redisTemplate.delete(message.getTopic()+RUNING);
+                redisTemplate.delete(lockKey);
             }
         }
+        System.out.println("-------------------end---index:  "+value);
 
+    }
+
+    private void sleep(String key) throws InterruptedException {
+        TimeUnit.MILLISECONDS.sleep(50);
+        redisTemplate.expire(key,EXPIRE_SECOND, TimeUnit.SECONDS);
+    }
+
+    private Integer checkTopicRuning(String topic){
+        Integer total= (Integer) redisTemplate.opsForHash().get(topic,String.valueOf(SIZE));
+        if(total==null){
+            return null;
+        }
+        Integer index= (Integer) redisTemplate.opsForHash().get(topic,String.valueOf(OFFSET));
+        if(index==null){
+            return null;
+        }
+        if(total>index){
+            return index-1;
+        }
+        return null;
     }
 
     public abstract void consumer(String topic,Object value);
@@ -110,25 +167,37 @@ public abstract class RedisMqHandler{
         return gson.fromJson(gson.toJson(value),clazz);
     }
 
+    @Value("${server.port}")
+    private String port ;
+
+    private String getIpAndPort(){
+        InetAddress localHost = null;
+        try {
+            localHost = Inet4Address.getLocalHost();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return localHost.getHostAddress()+":"+port;
+    }
+
     public boolean cleanTopic(@NotNull String topic){
-        if(lock(topic+RUNING,EXPIRE_SECOND)){
-            redisTemplate.delete(topic+RUNING);
+        Set<String> keys=redisTemplate.keys(topic+RUNING+"*");
+        if(CollectionUtils.isEmpty(keys)){
             redisTemplate.delete(topic);
             return true;
         }else{
             return false;
         }
     }
-
     public boolean lock(@NotNull String key, String value, long expireSecond){
         DefaultRedisScript defaultRedisScript = new DefaultRedisScript();
         defaultRedisScript.setScriptSource(LOCK);
         defaultRedisScript.setResultType(Long.class);
-        Object result=redisTemplate.execute(defaultRedisScript,Collections.singletonList(key), value,String.valueOf(expireSecond));
+        Object result=redisTemplate.execute(defaultRedisScript,Arrays.asList(key,String.valueOf(expireSecond)), value);
         return SUCCESS.equals(result);
     }
 
     public boolean lock(@NotNull String key,long expireSecond){
-        return lock(key,String.valueOf(SUCCESS),expireSecond);
+        return lock(key,String.valueOf(LocalDateTime.now()),expireSecond);
     }
 }

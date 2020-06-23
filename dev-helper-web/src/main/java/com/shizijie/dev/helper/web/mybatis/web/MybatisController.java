@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -88,8 +89,14 @@ public class MybatisController extends BaseController {
     @GetMapping("/test")
     public void test(){
         ListDataEnumDTO dto=new ListDataEnumDTO();
-        dto.setEnumName("xl");
-        redisMqHandler.producer("xltopic",dto);
+        for(int i=1;i<=10;i++){
+            dto.setEnumName(String.valueOf(i));
+            redisMqHandler.producer("xltopic",dto);
+        }
+        for(int i=1;i<=10;i++){
+            dto.setEnumName(String.valueOf(i));
+            redisMqHandler.producer("TEST",dto);
+        }
     }
 
 }

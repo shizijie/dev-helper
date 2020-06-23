@@ -1,12 +1,7 @@
 package com.shizijie.dev.helper.core.config;
 
-import com.alibaba.fastjson.support.spring.FastJsonRedisSerializer;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.shizijie.dev.helper.core.api.user.RedisMqHandler;
-import com.shizijie.dev.helper.core.redis.Consumer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -22,12 +17,9 @@ import org.springframework.data.redis.listener.PatternTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -49,8 +41,8 @@ public class RedisConfiguration extends CachingConfigurerSupport {
         template.setValueSerializer(jsonRedisSerializer);
         template.setHashValueSerializer(jsonRedisSerializer);
         // key的序列化采用StringRedisSerializer
-        template.setKeySerializer(RedisSerializer.string());
-        template.setHashKeySerializer(RedisSerializer.string());
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
         template.setConnectionFactory(redisConnectionFactory);
         return template;
     }
@@ -62,7 +54,7 @@ public class RedisConfiguration extends CachingConfigurerSupport {
         container.setConnectionFactory(connectionFactory);
         //订阅多个频道
         container.addMessageListener(listenerAdapter,new PatternTopic(RedisMqHandler.TOPIC));
-        container.setTopicSerializer(RedisSerializer.string());
+        container.setTopicSerializer(new StringRedisSerializer());
 
 
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
