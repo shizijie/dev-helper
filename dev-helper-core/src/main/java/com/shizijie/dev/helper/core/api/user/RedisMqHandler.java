@@ -32,6 +32,8 @@ public abstract class RedisMqHandler{
 
     public static final String RUNING="_RUNING_";
 
+    public static final String RUNING_QUEUE="_RUNING_QUEUE";
+
     public static final long EXPIRE_SECOND=60L;
 
     private static final int OFFSET=-1;
@@ -93,23 +95,24 @@ public abstract class RedisMqHandler{
                         continue;
                     }
                     //消费开始
-                    List<Future> result=new ArrayList<>(num);
+                    Map<Future,Integer> resultMap=new HashMap<>(num);
                     for(int i=1;i<=num;i++){
                         Integer index=checkTopicRuning(message.topic,true);
                         if(index!=null){
                             Object val=redisTemplate.opsForHash().get(message.getTopic(),String.valueOf(index));
-                            result.add(THREAD_POOL.submit(()->{
+                            resultMap.put(THREAD_POOL.submit(()->{
                                 consumer(message.getTopic(),val);
-                            }));
+                            }),index);
                         }else{
                             break;
                         }
                     }
-                    if(!CollectionUtils.isEmpty(result)){
-                        for(Future future:result){
+                    if(!CollectionUtils.isEmpty(resultMap)){
+                        for(Future future:resultMap.keySet()){
                             while (true){
                                 if(future.isDone()&&!future.isCancelled()){
                                     future.get();
+                                    cleanRuningIndex(message.topic,resultMap.get(future));
                                     break;
                                 }
                                 sleep(lockKey);
@@ -139,12 +142,16 @@ public abstract class RedisMqHandler{
     }
 
     private Integer checkTopicRuning(String topic,boolean hincrby){
-        Object result=redisTemplate.execute(getRedisScript(PULL,Long.class),Arrays.asList(topic,String.valueOf(SIZE),String.valueOf(OFFSET)),hincrby? String.valueOf(LocalDateTime.now()):hincrby );
+        Object result=redisTemplate.execute(getRedisScript(PULL,Long.class),Arrays.asList(topic,String.valueOf(SIZE),String.valueOf(OFFSET),RUNING_QUEUE),hincrby? String.valueOf(LocalDateTime.now()):hincrby );
         if(FINISH_STATUS.equals(result)||result==null){
             return null;
         }else{
             return Integer.parseInt(result.toString());
         }
+    }
+
+    private void cleanRuningIndex(String topic,Integer index){
+        redisTemplate.opsForHash().delete(topic+RUNING_QUEUE,String.valueOf(index));
     }
 
     public abstract void consumer(String topic,Object value);
