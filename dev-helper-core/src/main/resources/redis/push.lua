@@ -1,7 +1,7 @@
 if redis.call('hget', KEYS[1], KEYS[3]) then
 
 else
-    redis.call('hset', KEYS[1], KEYS[3], 1)
+    redis.call('hset', KEYS[1], KEYS[3], 0)
 end
 
 local num=redis.call('hget', KEYS[1], KEYS[4])

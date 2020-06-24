@@ -1,6 +1,5 @@
 package com.shizijie.dev.helper.web.mybatis.web;
 
-import com.alibaba.fastjson.JSON;
 import com.shizijie.dev.helper.core.api.user.RedisMqHandler;
 import com.shizijie.dev.helper.web.mybatis.web.dto.ListDataEnumDTO;
 import org.springframework.stereotype.Component;
@@ -18,12 +17,11 @@ public class RedisTest extends RedisMqHandler{
     public void consumer(String topic, Object value) {
         String thread=Thread.currentThread().getName();
         ListDataEnumDTO dto=parseObject(value,ListDataEnumDTO.class);
-        System.out.println(thread+" topic: "+topic+" value: "+JSON.toJSON(dto)+"======start");
         try {
             TimeUnit.SECONDS.sleep(5);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println(thread+" topic: "+topic+" value: "+JSON.toJSON(dto)+"======end");
+        System.out.println(thread+" topic: "+topic+" value: "+dto.getEnumName());
     }
 }

@@ -1,33 +1,24 @@
 package com.shizijie.dev.helper.core.api.user;
 
-import com.alibaba.fastjson.JSON;
 import com.google.gson.Gson;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.connection.StringRedisConnection;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.lang.Nullable;
 import org.springframework.scripting.ScriptSource;
 import org.springframework.scripting.support.ResourceScriptSource;
 import org.springframework.util.CollectionUtils;
 
 import javax.validation.constraints.NotNull;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
@@ -51,6 +42,8 @@ public abstract class RedisMqHandler{
 
     private final ScriptSource PUSH=new ResourceScriptSource(new ClassPathResource("redis/push.lua"));
 
+    private final ScriptSource PULL=new ResourceScriptSource(new ClassPathResource("redis/pull.lua"));
+
     private final ScriptSource LOCK=new ResourceScriptSource(new ClassPathResource("redis/lock.lua"));
 
     private final ThreadPoolExecutor THREAD_POOL= new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE,
@@ -69,47 +62,47 @@ public abstract class RedisMqHandler{
 
     private final Long SUCCESS=1L;
 
+    private final Long FINISH_STATUS=-1L;
+
 
     public boolean producer(String topic,Object value){
         if(StringUtils.isBlank(topic)||value==null){
             return false;
         }
-        DefaultRedisScript defaultRedisScript = new DefaultRedisScript();
-        defaultRedisScript.setScriptSource(PUSH);
-        defaultRedisScript.setResultType(Long.class);
-        Object result=redisTemplate.execute(defaultRedisScript, Arrays.asList(topic,TOPIC,String.valueOf(OFFSET),String.valueOf(SIZE)),value,gson.toJson(new Message(topic,value)));
+        Object result=redisTemplate.execute(getRedisScript(PUSH,Long.class), Arrays.asList(topic,TOPIC,String.valueOf(OFFSET),String.valueOf(SIZE)),value,gson.toJson(new Message(topic,value)));
         return SUCCESS.equals(result);
     }
     public void pull(String value){
         Message message=gson.fromJson(value, Message.class);
+        if(checkTopicRuning(message.topic,false)==null){
+            return;
+        }
         String lockKey=message.getTopic()+RUNING+getIpAndPort();
         boolean needUpdate=lock(lockKey,EXPIRE_SECOND);
         if(!needUpdate){
-            System.out.println("<<<<<<<<<< out "+value);
             //系统正在执行中！
             return;
         }
-        System.out.println(">>>>>>>>>>>>>>>>> topic+"+value);
+        System.out.println(lockKey+"-------------------start-----:  "+value);
         try {
             while (true){
-                if(checkTopicRuning(message.topic)!=null){
+                if(checkTopicRuning(message.topic,false)!=null){
                     int num=THREAD_POOL.getCorePoolSize()-THREAD_POOL.getActiveCount();
                     if(num==0){
                         sleep(lockKey);
                         continue;
                     }
                     //消费开始
-                    List<Future> result=new ArrayList<>(4);
+                    List<Future> result=new ArrayList<>(num);
                     for(int i=1;i<=num;i++){
-                        Integer index=checkTopicRuning(message.topic);
+                        Integer index=checkTopicRuning(message.topic,true);
                         if(index!=null){
                             Object val=redisTemplate.opsForHash().get(message.getTopic(),String.valueOf(index));
-                            //consumer(message.getTopic(),gson.fromJson(gson.toJson(message.getValue()),Object.class));
                             result.add(THREAD_POOL.submit(()->{
                                 consumer(message.getTopic(),val);
                             }));
-                            //消费结束
-                            redisTemplate.opsForHash().increment(message.getTopic(),String.valueOf(OFFSET),1);
+                        }else{
+                            break;
                         }
                     }
                     if(!CollectionUtils.isEmpty(result)){
@@ -125,7 +118,7 @@ public abstract class RedisMqHandler{
                     }
                     sleep(lockKey);
                 }else{
-                    break;
+                    return;
                 }
             }
         } catch (InterruptedException e) {
@@ -135,10 +128,9 @@ public abstract class RedisMqHandler{
         } finally {
             if(needUpdate){
                 redisTemplate.delete(lockKey);
+                System.out.println(lockKey+"-------------------end-----:  "+value);
             }
         }
-        System.out.println("-------------------end---index:  "+value);
-
     }
 
     private void sleep(String key) throws InterruptedException {
@@ -146,19 +138,13 @@ public abstract class RedisMqHandler{
         redisTemplate.expire(key,EXPIRE_SECOND, TimeUnit.SECONDS);
     }
 
-    private Integer checkTopicRuning(String topic){
-        Integer total= (Integer) redisTemplate.opsForHash().get(topic,String.valueOf(SIZE));
-        if(total==null){
+    private Integer checkTopicRuning(String topic,boolean hincrby){
+        Object result=redisTemplate.execute(getRedisScript(PULL,Long.class),Arrays.asList(topic,String.valueOf(SIZE),String.valueOf(OFFSET)),hincrby? String.valueOf(LocalDateTime.now()):hincrby );
+        if(FINISH_STATUS.equals(result)||result==null){
             return null;
+        }else{
+            return Integer.parseInt(result.toString());
         }
-        Integer index= (Integer) redisTemplate.opsForHash().get(topic,String.valueOf(OFFSET));
-        if(index==null){
-            return null;
-        }
-        if(total>index){
-            return index-1;
-        }
-        return null;
     }
 
     public abstract void consumer(String topic,Object value);
@@ -189,11 +175,16 @@ public abstract class RedisMqHandler{
             return false;
         }
     }
-    public boolean lock(@NotNull String key, String value, long expireSecond){
+
+    private DefaultRedisScript getRedisScript(@Nullable ScriptSource scriptSource,@Nullable Class resultType){
         DefaultRedisScript defaultRedisScript = new DefaultRedisScript();
-        defaultRedisScript.setScriptSource(LOCK);
-        defaultRedisScript.setResultType(Long.class);
-        Object result=redisTemplate.execute(defaultRedisScript,Arrays.asList(key,String.valueOf(expireSecond)), value);
+        defaultRedisScript.setScriptSource(scriptSource);
+        defaultRedisScript.setResultType(resultType);
+        return defaultRedisScript;
+    }
+
+    public boolean lock(@NotNull String key, String value, long expireSecond){
+        Object result=redisTemplate.execute(getRedisScript(LOCK,Long.class),Arrays.asList(key,String.valueOf(expireSecond)), value);
         return SUCCESS.equals(result);
     }
 

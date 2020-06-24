@@ -91,11 +91,11 @@ public class MybatisController extends BaseController {
         ListDataEnumDTO dto=new ListDataEnumDTO();
         for(int i=1;i<=10;i++){
             dto.setEnumName(String.valueOf(i));
-            redisMqHandler.producer("xltopic",dto);
+            redisMqHandler.producer("AAAA",dto);
         }
         for(int i=1;i<=10;i++){
             dto.setEnumName(String.valueOf(i));
-            redisMqHandler.producer("TEST",dto);
+            redisMqHandler.producer("BBBB",dto);
         }
     }
 
