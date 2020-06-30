@@ -40,6 +40,10 @@ public abstract class RedisMqHandler{
 
     private static final int SIZE=-2;
 
+    private static final int FINISH_NUM=-3;
+
+    private static final int FINISH_FLAG=-4;
+
     private static final int POOL_SIZE=Runtime.getRuntime().availableProcessors()*2;
 
     private final ScriptSource PUSH=new ResourceScriptSource(new ClassPathResource("redis/push.lua"));
@@ -121,7 +125,7 @@ public abstract class RedisMqHandler{
                     }
                     sleep(lockKey);
                 }else{
-                    return;
+                    break;
                 }
             }
         } catch (InterruptedException e) {
@@ -133,6 +137,17 @@ public abstract class RedisMqHandler{
                 redisTemplate.delete(lockKey);
                 System.out.println(lockKey+"-------------------end-----:  "+value);
             }
+        }
+        checkTopicStatus(message.getTopic());
+    }
+
+    private void checkTopicStatus(String topic) {
+        Boolean isOver=redisTemplate.hasKey(topic+RUNING_QUEUE);
+        System.out.println(isOver);
+        if(isOver==null||!isOver){
+            //判断是否完成
+            //进行中不为空 转进行中
+            System.out.println(topic+"=====>结束！！！！");
         }
     }
 
