@@ -1,6 +1,7 @@
 package com.shizijie.dev.helper.core.api.user;
 
 import com.google.gson.Gson;
+import com.shizijie.dev.helper.core.redis.TopicEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -30,27 +31,23 @@ import java.util.concurrent.*;
 public abstract class RedisMqHandler{
     public static final String TOPIC="REDIS_MQ_HANDLER";
 
+    public static final String TOPIC_ACTIVATE="REDIS_MQ_HANDLER_ACTIVATE";
+
     public static final String RUNING="_RUNING_";
 
-    public static final String RUNING_QUEUE="_RUNING_QUEUE";
-
     public static final long EXPIRE_SECOND=60L;
-
-    private static final int OFFSET=-1;
-
-    private static final int SIZE=-2;
-
-    private static final int FINISH_NUM=-3;
-
-    private static final int FINISH_FLAG=-4;
 
     private static final int POOL_SIZE=Runtime.getRuntime().availableProcessors()*2;
 
     private final ScriptSource PUSH=new ResourceScriptSource(new ClassPathResource("redis/push.lua"));
 
-    private final ScriptSource PULL=new ResourceScriptSource(new ClassPathResource("redis/pull.lua"));
+    private final ScriptSource PULL=new ResourceScriptSource(new ClassPathResource("redis/pull2.lua"));
 
     private final ScriptSource LOCK=new ResourceScriptSource(new ClassPathResource("redis/lock.lua"));
+
+    private final ScriptSource DEL=new ResourceScriptSource(new ClassPathResource("redis/commit.lua"));
+
+    private final ScriptSource CHECK=new ResourceScriptSource(new ClassPathResource("redis/check.lua"));
 
     private final ThreadPoolExecutor THREAD_POOL= new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE,
             0L, TimeUnit.MILLISECONDS,
@@ -61,104 +58,134 @@ public abstract class RedisMqHandler{
     private RedisTemplate redisTemplate;
     @AllArgsConstructor
     @Data
-    class Message{
+    public class Message{
         private String topic;
         private Object value;
     }
 
     private final Long SUCCESS=1L;
 
-    private final Long FINISH_STATUS=-1L;
-
-
+    /**
+     * 推送信息
+     * @param topic key
+     * @param value value
+     * @return
+     */
     public boolean producer(String topic,Object value){
         if(StringUtils.isBlank(topic)||value==null){
             return false;
         }
-        Object result=redisTemplate.execute(getRedisScript(PUSH,Long.class), Arrays.asList(topic,TOPIC,String.valueOf(OFFSET),String.valueOf(SIZE)),value,gson.toJson(new Message(topic,value)));
+        Object result=redisTemplate.execute(getRedisScript(PUSH,Long.class), Arrays.asList(TOPIC,topic, TopicEnum.OFFSET.getCode(),TopicEnum.SIZE.getCode(),TopicEnum.STATUS.getCode(),TopicEnum.CHECK_STATUS.getCode()),value,gson.toJson(new Message(topic,value)));
         return SUCCESS.equals(result);
     }
+
+    /**
+     * 拉取信息
+     * @param value  json字符串
+     */
     public void pull(String value){
         Message message=gson.fromJson(value, Message.class);
+        //判断当前status是否存在任务
         if(checkTopicRuning(message.topic,false)==null){
             return;
         }
         String lockKey=message.getTopic()+RUNING+getIpAndPort();
-        boolean needUpdate=lock(lockKey,EXPIRE_SECOND);
-        if(!needUpdate){
+        boolean hasLock=lock(lockKey,EXPIRE_SECOND);
+        if(!hasLock){
             //系统正在执行中！
             return;
         }
-        System.out.println(lockKey+"-------------------start-----:  "+value);
+        //获取本机topic锁
         try {
-            while (true){
-                if(checkTopicRuning(message.topic,false)!=null){
-                    int num=THREAD_POOL.getCorePoolSize()-THREAD_POOL.getActiveCount();
-                    if(num==0){
-                        sleep(lockKey);
-                        continue;
-                    }
-                    //消费开始
-                    Map<Future,Integer> resultMap=new HashMap<>(num);
-                    for(int i=1;i<=num;i++){
-                        Integer index=checkTopicRuning(message.topic,true);
-                        if(index!=null){
-                            Object val=redisTemplate.opsForHash().get(message.getTopic(),String.valueOf(index));
-                            resultMap.put(THREAD_POOL.submit(()->{
-                                consumer(message.getTopic(),val);
-                            }),index);
-                        }else{
-                            break;
-                        }
-                    }
-                    if(!CollectionUtils.isEmpty(resultMap)){
-                        for(Future future:resultMap.keySet()){
-                            while (true){
-                                if(future.isDone()&&!future.isCancelled()){
-                                    future.get();
-                                    cleanRuningIndex(message.topic,resultMap.get(future));
-                                    break;
-                                }
-                                sleep(lockKey);
-                            }
-                        }
-                    }
-                    sleep(lockKey);
-                }else{
-                    break;
-                }
-            }
+            exec(message.topic,lockKey);
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
         } finally {
-            if(needUpdate){
+            if(hasLock){
                 redisTemplate.delete(lockKey);
+            }
+        }
+        Long check=checkTopicStatus(message.getTopic());
+        if(check>0){
+            if(!SUCCESS.equals(check)){
+                try {
+                    TimeUnit.MILLISECONDS.sleep(50);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                redisTemplate.opsForHash().delete(message.topic,TopicEnum.CHECK_STATUS.getCode());
+                redisTemplate.convertAndSend(TOPIC,value);
+                System.out.println("======  发送信息  ====== ： "+value);
+            }else{
+                //完成！！！
                 System.out.println(lockKey+"-------------------end-----:  "+value);
             }
         }
-        checkTopicStatus(message.getTopic());
     }
 
-    private void checkTopicStatus(String topic) {
-        Boolean isOver=redisTemplate.hasKey(topic+RUNING_QUEUE);
-        System.out.println(isOver);
-        if(isOver==null||!isOver){
-            //判断是否完成
-            //进行中不为空 转进行中
-            System.out.println(topic+"=====>结束！！！！");
+    private void exec(String topic,String lockKey) throws InterruptedException, ExecutionException {
+        while (true){
+            //判断当前status是否存在任务
+            if(checkTopicRuning(topic,false)!=null){
+                //判断是否存在空闲线程
+                int num=THREAD_POOL.getCorePoolSize()-THREAD_POOL.getActiveCount();
+                if(num==0){
+                    sleep(lockKey);
+                    continue;
+                }
+                //消费开始
+                Map<Future,Integer> resultMap=new HashMap<>(num);
+                for(int i=1;i<=num;i++){
+                    Integer index=checkTopicRuning(topic,true);
+                    if(index!=null){
+                        //消费
+                        Object val=redisTemplate.opsForHash().get(topic,String.valueOf(index));
+                        resultMap.put(THREAD_POOL.submit(()->{
+                            consumer(topic,val);
+                        }),index);
+                    }else{
+                        break;
+                    }
+                }
+                if(!CollectionUtils.isEmpty(resultMap)){
+                    for(Future future:resultMap.keySet()){
+                        while (true){
+                            //完成，清除进度
+                            if(future.isDone()&&!future.isCancelled()){
+                                future.get();
+                                cleanRuningIndex(topic,resultMap.get(future));
+                                break;
+                            }
+                            sleep(lockKey);
+                        }
+                    }
+                }else{
+                    sleep(lockKey);
+                }
+            }else{
+                break;
+            }
         }
     }
 
+
+
+    private Long checkTopicStatus(String topic) {
+        Object result=redisTemplate.execute(getRedisScript(CHECK,Long.class),Arrays.asList(topic,TopicEnum.QUEUE.getCode(),TopicEnum.QUEUE_BAK.getCode(),TopicEnum.STATUS.getCode(),TopicEnum.CHECK_STATUS.getCode(),topic+RUNING+"*"));
+        return result==null?-3L:Long.parseLong(result.toString());
+    }
+
     private void sleep(String key) throws InterruptedException {
+        //刷新本机锁
         TimeUnit.MILLISECONDS.sleep(50);
         redisTemplate.expire(key,EXPIRE_SECOND, TimeUnit.SECONDS);
     }
 
     private Integer checkTopicRuning(String topic,boolean hincrby){
-        Object result=redisTemplate.execute(getRedisScript(PULL,Long.class),Arrays.asList(topic,String.valueOf(SIZE),String.valueOf(OFFSET),RUNING_QUEUE),hincrby? String.valueOf(LocalDateTime.now()):hincrby );
-        if(FINISH_STATUS.equals(result)||result==null){
+        Object result=redisTemplate.execute(getRedisScript(PULL,Long.class),Arrays.asList(topic,TopicEnum.QUEUE.getCode(),TopicEnum.QUEUE_BAK.getCode(),TopicEnum.OFFSET.getCode(),TopicEnum.SIZE.getCode(),TopicEnum.STATUS.getCode()),hincrby);
+        if(result==null||Integer.parseInt(result.toString())<0){
             return null;
         }else{
             return Integer.parseInt(result.toString());
@@ -166,7 +193,7 @@ public abstract class RedisMqHandler{
     }
 
     private void cleanRuningIndex(String topic,Integer index){
-        redisTemplate.opsForHash().delete(topic+RUNING_QUEUE,String.valueOf(index));
+        redisTemplate.execute(getRedisScript(DEL,Long.class),Arrays.asList(topic,TopicEnum.QUEUE.getCode(),TopicEnum.QUEUE_BAK.getCode(),String.valueOf(index),TopicEnum.STATUS.getCode()));
     }
 
     public abstract void consumer(String topic,Object value);

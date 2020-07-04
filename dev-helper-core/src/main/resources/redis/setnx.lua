@@ -1,0 +1,1 @@
+return redis.call('hsetnx', KEYS[1],'1',ARGV[1])

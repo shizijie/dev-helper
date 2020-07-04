@@ -15,6 +15,10 @@ import com.shizijie.dev.helper.web.mybatis.web.vo.GetDataSqlVO;
 import com.shizijie.dev.helper.web.mybatis.web.vo.QueryTableInfoVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.scripting.support.ResourceScriptSource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -86,17 +91,28 @@ public class MybatisController extends BaseController {
     @Autowired
     private RedisMqHandler redisMqHandler;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
+
     @GetMapping("/test")
     public void test(){
         ListDataEnumDTO dto=new ListDataEnumDTO();
         for(int i=1;i<=10;i++){
             dto.setEnumName(String.valueOf(i));
+            redisTemplate.opsForList().leftPush("AAAA_QUEUE",i);
             redisMqHandler.producer("AAAA",dto);
         }
         for(int i=1;i<=10;i++){
             dto.setEnumName(String.valueOf(i));
             redisMqHandler.producer("BBBB",dto);
         }
+
+
+//        DefaultRedisScript defaultRedisScript = new DefaultRedisScript();
+//        defaultRedisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("redis/test.lua")));
+//        defaultRedisScript.setResultType(Long.class);
+//        Object result=redisTemplate.execute(defaultRedisScript, Arrays.asList("xltop*"));
+//        System.out.println(result);
     }
 
 }
