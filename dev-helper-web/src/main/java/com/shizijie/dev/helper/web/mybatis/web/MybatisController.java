@@ -88,31 +88,31 @@ public class MybatisController extends BaseController {
     }
 
 
-    @Autowired
-    private RedisMqHandler redisMqHandler;
-
-    @Autowired
-    private RedisTemplate redisTemplate;
-
-    @GetMapping("/test")
-    public void test(){
-        ListDataEnumDTO dto=new ListDataEnumDTO();
-        for(int i=1;i<=10;i++){
-            dto.setEnumName(String.valueOf(i));
-            redisTemplate.opsForList().leftPush("AAAA_QUEUE",i);
-            redisMqHandler.producer("AAAA",dto);
-        }
-        for(int i=1;i<=10;i++){
-            dto.setEnumName(String.valueOf(i));
-            redisMqHandler.producer("BBBB",dto);
-        }
-
-
-//        DefaultRedisScript defaultRedisScript = new DefaultRedisScript();
-//        defaultRedisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("redis/test.lua")));
-//        defaultRedisScript.setResultType(Long.class);
-//        Object result=redisTemplate.execute(defaultRedisScript, Arrays.asList("xltop*"));
-//        System.out.println(result);
-    }
+//    @Autowired
+//    private RedisMqHandler redisMqHandler;
+//
+//    @Autowired
+//    private RedisTemplate redisTemplate;
+//
+//    @GetMapping("/test")
+//    public void test(){
+//        ListDataEnumDTO dto=new ListDataEnumDTO();
+//        for(int i=1;i<=10;i++){
+//            dto.setEnumName(String.valueOf(i));
+//            redisTemplate.opsForList().leftPush("AAAA_QUEUE",i);
+//            redisMqHandler.producer("AAAA",dto);
+//        }
+//        for(int i=1;i<=10;i++){
+//            dto.setEnumName(String.valueOf(i));
+//            redisMqHandler.producer("BBBB",dto);
+//        }
+//
+//
+////        DefaultRedisScript defaultRedisScript = new DefaultRedisScript();
+////        defaultRedisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("redis/test.lua")));
+////        defaultRedisScript.setResultType(Long.class);
+////        Object result=redisTemplate.execute(defaultRedisScript, Arrays.asList("xltop*"));
+////        System.out.println(result);
+//    }
 
 }

@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @version 2019-11-10 上午10:21
  */
 @SpringBootApplication
-@EnableDevHelper(UserService.class)
+//@EnableDevHelper(UserService.class)
 public class DevHelperWebApplication {
     public static void main(String[] args){
         SpringApplication app = new SpringApplication(DevHelperWebApplication.class);

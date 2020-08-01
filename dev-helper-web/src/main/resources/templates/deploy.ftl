@@ -16,7 +16,6 @@
 <br/>
 <button onclick="openModel()" type="button" class="btn btn-info center-block" >服务器信息管理</button>
 <a class="btn btn-info col-md-offset-1" href="/index">返回主页</a>
-<button type="button" class="btn btn-primary" onclick="openServiceModel()">添加服务</button>
 <!-- 模态框 -->
 <div class="modal fade bd-example-modal-xl" id="exampleModalScrollable" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
     <div class="modal-dialog" style="width:90%" role="document">

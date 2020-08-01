@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * @author shizijie
  * @version 2020-06-20 下午4:44
  */
-@Component("redisMqHandler")
+//@Component("redisMqHandler")
 public class RedisTest extends RedisMqHandler{
     @Autowired
     private List<RedisMqServer> list;
