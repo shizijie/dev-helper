@@ -4,6 +4,7 @@ import com.shizijie.dev.helper.web.common.BaseController;
 import com.shizijie.dev.helper.web.common.ResponseBean;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -23,9 +24,22 @@ public class ExceptionAdvice extends BaseController {
         String msg="";
         for(FieldError fieldError:bindingResult.getFieldErrors()){
             if(StringUtils.isBlank(msg)){
-                msg+=fieldError.getDefaultMessage();
+                msg+=fieldError.getField()+":"+fieldError.getDefaultMessage();
             }else{
-                msg+=" , "+fieldError.getDefaultMessage();
+                msg+=" , "+fieldError.getField()+":"+fieldError.getDefaultMessage();
+            }
+        }
+        return fail(msg);
+    }
+    @ExceptionHandler(BindException.class)
+    public ResponseBean bindException(BindException exception){
+        BindingResult bindingResult=exception.getBindingResult();
+        String msg="";
+        for(FieldError fieldError:bindingResult.getFieldErrors()){
+            if(StringUtils.isBlank(msg)){
+                msg+=fieldError.getField()+":"+fieldError.getDefaultMessage();
+            }else{
+                msg+=" , "+fieldError.getField()+":"+fieldError.getDefaultMessage();
             }
         }
         return fail(msg);

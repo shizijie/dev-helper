@@ -24,5 +24,10 @@ public class RouteController {
         return "createDatas";
     }
 
+    @GetMapping("/deploy")
+    public String deploy(){
+        return "deploy";
+    }
+
 
 }

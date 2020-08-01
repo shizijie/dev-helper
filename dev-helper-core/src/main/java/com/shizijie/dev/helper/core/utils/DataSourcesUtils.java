@@ -15,11 +15,16 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 public class DataSourcesUtils {
+    private static String MYSQL_URL="jdbc:mysql://%s?useUnicode=true&characterEncoding=UTF8&useSSL=false";
+
+    private static String POSTGRESQL_URL="jdbc:postgresql://%s";
+
+
     public static Connection getConnection(String url,String username,String pwd,String driver){
         Connection connection=null;
         try {
             Class.forName(driver);
-            connection= DriverManager.getConnection(url,username,pwd);
+            connection= DriverManager.getConnection(getUrl(driver,url),username,pwd);
         } catch (ClassNotFoundException e) {
             log.error(e.getMessage(),e);
         } catch (SQLException e) {
@@ -35,7 +40,7 @@ public class DataSourcesUtils {
             log.error(e.getMessage(),e);
             return "driver is not find!"+e.getMessage();
         }
-        try(Connection connection= DriverManager.getConnection(url,username,pwd)){
+        try(Connection connection= DriverManager.getConnection(getUrl(driver,url),username,pwd)){
             if(connection==null){
                 return "url/user/pwd/driver is error!";
             }
@@ -44,6 +49,18 @@ public class DataSourcesUtils {
             return "url/user/pwd/driver is error!"+e.getMessage();
         }
         return null;
+    }
+
+
+    public static String getUrl(String driver,String url){
+        switch (driver){
+            case "com.mysql.jdbc.Driver":
+                return String.format(MYSQL_URL,url);
+            case "org.postgresql.Driver":
+                return String.format(POSTGRESQL_URL,url);
+                default:
+                    return null;
+        }
     }
 
     public static String underlineToCamel(String name){

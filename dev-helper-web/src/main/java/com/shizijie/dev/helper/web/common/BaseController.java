@@ -34,7 +34,13 @@ public class BaseController {
         return responseBean;
     }
 
-    protected <T> ResponseBean<T> back(String result){
+    /**
+     * 无返回值，若不为null，则代表失败，返回内容为失败原因
+     * @param result
+     * @param <T>
+     * @return
+     */
+    protected <T> ResponseBean<T> noRespBack(String result){
         if(result!=null){
             return fail(result);
         }

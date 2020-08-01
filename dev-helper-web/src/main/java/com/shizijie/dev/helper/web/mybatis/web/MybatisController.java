@@ -56,7 +56,7 @@ public class MybatisController extends BaseController {
     @PostMapping("/checkConnection")
     public ResponseBean checkConnection(@Validated @RequestBody CheckConnectionVO vo){
         String result= DataSourcesUtils.checkConnection(vo.getUrl(),vo.getUsername(),vo.getPwd(),vo.getDriver());
-        return back(result);
+        return noRespBack(result);
     }
 
     @PostMapping("/listTableByConnection")
@@ -84,7 +84,7 @@ public class MybatisController extends BaseController {
 
     @PostMapping("/getDataSql")
     public ResponseBean getDataSql(@Validated @RequestBody GetDataSqlVO vo){
-        return back(createDatasService.getDataSql(vo));
+        return noRespBack(createDatasService.getDataSql(vo));
     }
 
 
