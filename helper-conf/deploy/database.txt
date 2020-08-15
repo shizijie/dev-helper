@@ -1,0 +1,1 @@
+[{"id":"cabaab55-742b-43dc-9d12-ef7934de3090","comment":"本地mysql","url":"127.0.0.1","database":"tkxt","username":"root","pwd":"123456","driver":"com.mysql.jdbc.Driver"}]

@@ -1,9 +1,9 @@
-package com.shizijie.dev.helper.web.mybatis.service;
+package com.shizijie.dev.helper.web.data.service;
 
 
 import com.shizijie.dev.helper.web.mybatis.web.dto.ListTableByConnectionDTO;
 import com.shizijie.dev.helper.web.mybatis.web.dto.QueryTableInfoDTO;
-import com.shizijie.dev.helper.web.mybatis.web.vo.CheckConnectionVO;
+import com.shizijie.dev.helper.web.data.dto.DatabaseDTO;
 import com.shizijie.dev.helper.web.mybatis.web.vo.GetDataSqlVO;
 import com.shizijie.dev.helper.web.mybatis.web.vo.QueryTableInfoVO;
 
@@ -13,7 +13,7 @@ import java.util.List;
  * @author shizijie
  * @version 2019-11-15 上午10:44
  */
-public interface CreateDatasService {
+public interface DatasService {
     String SQL="insert into TABLE_NAME (TABLE_COLUMNS_ARR) values (TABLE_DATAS);";
 
     String TABLE_NAME="TABLE_NAME";
@@ -22,11 +22,20 @@ public interface CreateDatasService {
 
     String TABLE_DATAS="TABLE_DATAS";
 
-    String SQL_OUT_PATH=System.getProperty("user.dir")+"/sqlfile";
+    String DATA_BASE="database.txt";
 
-    List<ListTableByConnectionDTO> listTableByConnection(CheckConnectionVO vo);
+    List<ListTableByConnectionDTO> listTableByConnection(DatabaseDTO vo);
 
-    List<QueryTableInfoDTO> queryTableInfo(QueryTableInfoVO vo);
+    List<QueryTableInfoDTO> queryTableInfo(DatabaseDTO databaseDTO, String tableName);
 
     String getDataSql(GetDataSqlVO vo);
+
+    List<DatabaseDTO> listDatabase();
+
+    String addDatabase(DatabaseDTO dataBaseDTO);
+
+    void deleteDatabase(String id);
+
+    DatabaseDTO queryDatabaseById(String id);
+
 }

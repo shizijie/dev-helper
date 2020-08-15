@@ -1,13 +1,14 @@
-package com.shizijie.dev.helper.web.mybatis.service;
+package com.shizijie.dev.helper.web.data.service;
 
 
+import com.shizijie.dev.helper.web.data.dto.DatabaseDTO;
 import com.shizijie.dev.helper.web.mybatis.web.vo.GetJavaFilesVO;
 
 /**
  * @author shizijie
  * @version 2019-11-12 下午5:23
  */
-public interface GetJavaFilesService {
+public interface JavaService {
     String IMPORT_BIGDECIMAL="import java.math.BigDecimal;";
 
     String IMPORT_DATE="import java.util.Date;";
@@ -22,8 +23,6 @@ public interface GetJavaFilesService {
             "javatemplate/EntityTemplateServiceImpl.txt",
             "javatemplate/EntityTemplateDao.txt",
             "javatemplate/EntityTemplateDao.xml"};
-
-    String BASE_OUT_PATH=System.getProperty("user.dir")+"/buildfile";
 
     String JAVA_FILE=".java";
 
@@ -50,5 +49,5 @@ public interface GetJavaFilesService {
 
     String ENTITY_PROPERTY="ENTITY_PROPERTY";
 
-    String buildJavaByTableName(GetJavaFilesVO vo);
+    String buildJavaByTableName(DatabaseDTO databaseDTO, String tableName);
 }

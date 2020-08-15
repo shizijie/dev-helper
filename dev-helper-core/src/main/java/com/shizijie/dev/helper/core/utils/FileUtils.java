@@ -1,11 +1,17 @@
 package com.shizijie.dev.helper.core.utils;
 
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -47,15 +53,15 @@ public class FileUtils {
             new File(Paths.get(path).toUri()).mkdirs();
         }
         Path out= Paths.get(path, fileName);
-        if(!Files.exists(out)){
-            try {
-                Files.createFile(out);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+//        if(Files.exists(out)){
+//            try {
+//                Files.delete(out);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
         try {
-            Files.write(out,content, StandardOpenOption.WRITE);
+            Files.write(out,content,StandardOpenOption.CREATE,StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -91,5 +97,30 @@ public class FileUtils {
             }
             file.delete();
         }
+    }
+
+    private static Gson gson=new Gson();
+
+    public static <T> List<T> readFileContent(String filePath, Class<T> clazz){
+        Path path= Paths.get(filePath);
+        if(!Files.exists(path)){
+            return Collections.EMPTY_LIST;
+        }
+        String json;
+        try {
+            json=new String(Files.readAllBytes(path));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Collections.EMPTY_LIST;
+        }
+        if(StringUtils.isNotBlank(json)){
+            JsonArray arry = new JsonParser().parse(json).getAsJsonArray();
+            List<T> list = new ArrayList<>();
+            for (JsonElement jsonElement : arry) {
+                list.add(gson.fromJson(jsonElement,clazz));
+            }
+            return list;
+        }
+        return Collections.EMPTY_LIST;
     }
 }

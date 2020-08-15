@@ -12,6 +12,8 @@ import javax.validation.constraints.NotBlank;
 public class QueryTableInfoVO {
     @NotBlank(message = "数据库连接不能为空！")
     private String url;
+    @NotBlank(message = "数据库库名不能为空！")
+    private String database;
     @NotBlank(message = "数据库帐号不能为空！")
     private String username;
     @NotBlank(message = "数据库密码不能为空！")

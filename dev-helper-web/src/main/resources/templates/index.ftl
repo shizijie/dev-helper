@@ -12,8 +12,8 @@
     <br/>
     <#--<a class="btn btn-info center-block" href="/getJavaFiles">获取实体</a>-->
     <#--<br/>-->
-    <a class="btn btn-info center-block" href="/createDatas">造数</a>
+    <a class="btn btn-primary center-block" href="/createDatas">造数</a>
     <br/>
-    <a class="btn btn-info center-block" href="/deploy">部署</a>
+    <a class="btn btn-primary center-block" href="/deploy">部署</a>
 </body>
 </html>

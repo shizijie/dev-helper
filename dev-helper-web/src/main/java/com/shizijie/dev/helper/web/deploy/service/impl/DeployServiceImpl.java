@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.shizijie.dev.helper.web.common.BuildFiles.DEPLOY_PATH;
+
 /**
  * @author shizijie
  * @version 2020-08-01 上午10:06
@@ -29,21 +31,7 @@ public class DeployServiceImpl implements DeployService {
 
     @Override
     public List<SSHDTO> listSSH() {
-        Path ssh= Paths.get(BASE_OUT_PATH+"/"+SSH);
-        if(!Files.exists(ssh)){
-            return Collections.EMPTY_LIST;
-        }
-        String json;
-        try {
-            json=new String(Files.readAllBytes(ssh));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return Collections.EMPTY_LIST;
-        }
-        if(StringUtils.isNotBlank(json)){
-            return gson.fromJson(json,new TypeToken<List<SSHDTO>>(){}.getType());
-        }
-        return Collections.EMPTY_LIST;
+        return FileUtils.readFileContent(DEPLOY_PATH+"/"+SSH,SSHDTO.class);
     }
 
     @Override
@@ -58,7 +46,7 @@ public class DeployServiceImpl implements DeployService {
         if(con==null){
             return "连接失败！";
         }
-        List<SSHDTO> list=new ArrayList<>(listSSH());
+        List<SSHDTO> list=listSSH();
         if(!CollectionUtils.isEmpty(list)){
             for(SSHDTO ssh:list){
                 if(ssh.getIp().equals(sshdto.getIp())){
@@ -67,7 +55,7 @@ public class DeployServiceImpl implements DeployService {
             }
         }
         list.add(sshdto);
-        FileUtils.createFile(BASE_OUT_PATH,SSH,gson.toJson(list).getBytes());
+        FileUtils.createFile(DEPLOY_PATH,SSH,gson.toJson(list).getBytes());
         return null;
     }
 }
