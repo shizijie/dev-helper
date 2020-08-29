@@ -1,8 +1,9 @@
-function getReq(url,func) {
+function getReq(url,data,func) {
     $.ajax({
         type: "get",
         url: url,
         contentType: "application/json;charset=utf-8",
+        data:data,
         dataType: "json",
         success:func
     });

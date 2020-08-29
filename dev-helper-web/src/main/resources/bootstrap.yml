@@ -2,6 +2,10 @@ server:
   #端口号
   port: 8999
 spring:
+  resources:
+    static-locations: classpath:/static/
+  mvc:
+    static-path-pattern: /static/**
   #redis
   redis:
     database: 0
@@ -26,4 +30,4 @@ spring:
       default_encoding: UTF-8
       template_update_delay: 0
     suffix: .ftl
-    template-loader-path: classpath:/templates/
+    template-loader-path: classpath:/static/templates/

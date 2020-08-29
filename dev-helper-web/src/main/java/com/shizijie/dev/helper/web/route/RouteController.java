@@ -21,7 +21,7 @@ public class RouteController {
 
     @GetMapping("/createDatas")
     public String createDatas(){
-        return "createDatas";
+        return "data/index";
     }
 
     @GetMapping("/deploy")
