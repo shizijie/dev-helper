@@ -71,4 +71,44 @@ public class L4 {
         return 0.0;
     }
 
+    public double findMedianSortedArrays2(int[] nums1, int[] nums2) {
+        if(nums1.length>nums2.length){
+            int[] tmp=nums1;
+            nums1=nums2;
+            nums2=tmp;
+        }
+        int iMin=0,iMax=nums1.length;
+        while(iMin<=iMax){
+            int i=(iMin+iMax)/2;
+            int j=(nums1.length+nums2.length+1)/2-i;
+            if(i<iMax&&nums2[j-1]>nums1[i]){
+                iMin=i+1;
+            }else if(i>iMin&&nums1[i-1]>nums2[j]){
+                iMax=i-1;
+            }else{
+                int maxLeft=0;
+                if(i==0){
+                    maxLeft=nums2[j-1];
+                }else if(j==0){
+                    maxLeft=nums1[i-1];
+                }else{
+                    maxLeft=Math.max(nums1[i-1],nums2[j-1]);
+                }
+                if((nums1.length+nums2.length)%2==1){
+                    return maxLeft;
+                }
+                int minRight=0;
+                if(i==nums1.length){
+                    minRight=nums2[j];
+                }else if(j==nums2.length){
+                    minRight=nums1[i];
+                }else{
+                    minRight=Math.min(nums1[i],nums2[j]);
+                }
+                return (maxLeft+minRight)/2.0;
+            }
+        }
+        return 0;
+    }
+
 }
