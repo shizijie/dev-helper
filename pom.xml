@@ -32,7 +32,7 @@
         <bootstrap.table.version>1.9.1</bootstrap.table.version>
         <jquery.version>3.4.1</jquery.version>
         <lombok.version>1.18.6</lombok.version>
-        <mybatis.version>3.5.0</mybatis.version>
+        <mybatis.version>3.5.6</mybatis.version>
         <drools.version>7.5.0.Final</drools.version>
     </properties>
 
