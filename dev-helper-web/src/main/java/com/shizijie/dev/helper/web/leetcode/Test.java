@@ -23,6 +23,7 @@ public class Test {
     }
 
 
+
     public Object getResult(Future future){
         while (true){
             if(!future.isCancelled()&&future.isDone()){

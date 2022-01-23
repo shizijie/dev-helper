@@ -21,14 +21,14 @@ package com.shizijie.dev.helper.web.leetcode;
  *
  */
 public class L5 {
-    public String longestPalindrome(String s) {
+    public static String longestPalindrome(String s) {
         if(s==null|s.length()<=1){
             return "";
         }
         int start=0,end=0;
         for(int i=0;i<s.length();i++){
-            int len1=getCenter(s,i,i);
-            int len2=getCenter(s,i,i+1);
+            int len1=getLength(s,i,i);
+            int len2=getLength(s,i,i+1);
             int len=Math.max(len1,len2);
             if(len>end-start){
                 start=i-(len-1)/2;
@@ -38,19 +38,32 @@ public class L5 {
         return s.substring(start,end+1);
     }
 
-    public int getCenter(String s,int left,int right){
-        int L=left;
-        int R=right;
-        while (L>=0&&R<s.length()&&s.charAt(L)==s.charAt(R)){
-            L--;
-            R++;
+    public static int getCenter(String s,int left,int right){
+        //int L=left;
+        //int R=right;
+        while (left>=0&&right<s.length()&&s.charAt(left)==s.charAt(right)){
+            left--;
+            right++;
         }
-        return R-L-1;
+        return right-left-1;
+    }
+
+    public static int getLength(String s,int start,int end){
+        while(start<=end){
+            if(s.charAt(start)==s.charAt(end)&&start>0&&end<s.length()){
+                start--;
+                end++;
+            }else{
+                break;
+            }
+        }
+        return end-start-1;
     }
 
     public static void main(String[] args) {
         int a=1;
         int b=a/2;
         System.out.println(b);
+        System.out.println(longestPalindrome("avbva"));
     }
 }
