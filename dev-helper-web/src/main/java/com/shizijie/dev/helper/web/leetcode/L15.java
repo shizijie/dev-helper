@@ -1,18 +1,16 @@
 package com.shizijie.dev.helper.web.leetcode;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import org.apache.poi.ss.formula.functions.T;
+
+import java.util.*;
 
 public class L15 {
-    public static void main(String[] args) {
-        System.out.println(threeSum(new int[]{3,0,-2,-1,1,2}));
-    }
     public static List<List<Integer>> threeSum(int[] nums) {
         if(nums.length<3){
             return new ArrayList<>();
         }
         Arrays.sort(nums);
+        Map<String,String> map=new HashMap<>();
         List<List<Integer>> list=new ArrayList<>();
         for(int i=0;nums[i]<=0&&i<nums.length-2;i++){
             if(nums[i]>0||nums[nums.length-1]<0){
@@ -47,5 +45,34 @@ public class L15 {
 
         }
         return list;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(findAnagrams("abcde","cb"));
+    }
+
+    public static List<Integer> findAnagrams(String s, String p) {
+        int[] cnt = new int[128];
+        for (char c : p.toCharArray()) {
+            cnt[c]++;
+        }
+        int lo = 0, hi = 0;
+        List<Integer> res = new ArrayList<>();
+        //高位小于s长度
+        while (hi < s.length()) {
+            //当高位字符>0
+            if (cnt[s.charAt(hi)] > 0) {
+                //高位去除，并自增
+                cnt[s.charAt(hi++)]--;
+                //如果高位-低位的长度等于p
+                if (hi - lo == p.length()) {
+                    res.add(lo);
+                }
+            } else {
+                //低位加1，并自增
+                cnt[s.charAt(lo++)]++;
+            }
+        }
+        return res;
     }
 }
