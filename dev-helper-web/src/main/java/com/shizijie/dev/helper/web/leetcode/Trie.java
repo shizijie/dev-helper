@@ -1,6 +1,7 @@
 package com.shizijie.dev.helper.web.leetcode;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 
@@ -60,6 +61,33 @@ public class Trie {
 
     public boolean containsDuplicate(int[] nums) {
         return (new HashSet(Arrays.asList(nums))).size()!=nums.length;
+    }
+
+    public int[] maxSlidingWindow(int[] nums, int k) {
+        Integer max=null;
+        int[] res=new int[nums.length-k+1];
+        int idx=0;
+        PriorityQueue<Integer> queue=new PriorityQueue(Comparator.reverseOrder());
+        for(int i=0;i<k;++i){
+            if(queue.size()<k){
+                queue.add(nums[i]);
+            }
+            if(queue.size()==k){
+                if(idx==0){
+                    res[idx++]=queue.peek();
+                }else{
+                    if(queue.peek()==nums[i]){
+                        queue.poll();
+                        queue.add(nums[i+k]);
+                        res[idx++]=queue.peek();
+                    }else{
+                        queue.add(nums[i+k]);
+                        res[idx++]=queue.peek();
+                    }
+                }
+            }
+        }
+        return res;
     }
 
 }
