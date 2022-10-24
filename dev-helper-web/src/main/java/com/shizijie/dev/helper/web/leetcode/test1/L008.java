@@ -3,6 +3,7 @@ package com.shizijie.dev.helper.web.leetcode.test1;
 /**
  * @author shizijie
  * @version 2022-01-22 下午8:48
+ * 转换2
  */
 public class L008 {
     public static void main(String[] args) {
@@ -11,6 +12,7 @@ public class L008 {
     }
 
     public int myAtoi(String s) {
+        String point = s;
         s = s.trim();
         int fuhao = 1;
         int total = 0;
@@ -31,7 +33,7 @@ public class L008 {
                     start = true;
                 }
                 int tmp = s.charAt(i) - '0';
-                if (fuhao == 1 && (total > Integer.MAX_VALUE / 10 || (total == Integer.MAX_VALUE/10 && tmp > 7))) {
+                if (fuhao == 1 && (total > Integer.MAX_VALUE / 10 || (total == Integer.MAX_VALUE / 10 && tmp > 7))) {
                     return Integer.MAX_VALUE;
                 } else if ((fuhao == -1) && (-1 * total < Integer.MIN_VALUE / 10 || (-1 * total == Integer.MIN_VALUE / 10 && -1 * tmp < -8))) {
                     return Integer.MIN_VALUE;
@@ -43,6 +45,7 @@ public class L008 {
                 break;
             }
         }
+        System.out.println(point);
         return total * fuhao;
     }
 }

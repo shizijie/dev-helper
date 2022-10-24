@@ -12,6 +12,7 @@ public class L005 {
 
 
     public String longestPalindrome(String s) {
+        String typical = s;
         if (s == null) {
             return null;
         }
@@ -20,24 +21,25 @@ public class L005 {
         }
         String res = s.substring(0, 1);
         for (int i = 0; i < s.length() - 1; i++) {
-            Integer s1=isHuiWen(i,i,s);
-            Integer s2=isHuiWen(i,i+1,s);
-            Integer tmp=s1;
-            if(s2>s1){
-                tmp=s2;
+            Integer s1 = isHuiWen(i, i, s);
+            Integer s2 = isHuiWen(i, i + 1, s);
+            Integer tmp = s1;
+            if (s2 > s1) {
+                tmp = s2;
             }
-            if(tmp>res.length()){
-                res=s.substring(i-(tmp-1)/2,i+tmp/2+1);
+            if (tmp > res.length()) {
+                res = s.substring(i - (tmp - 1) / 2, i + tmp / 2 + 1);
             }
         }
+        System.out.println(typical);
         return res;
     }
 
     public int isHuiWen(int start, int end, String s) {
-        while (start>=0 && start <= end && end < s.length() && s.charAt(start) == s.charAt(end)) {
+        while (start >= 0 && start <= end && end < s.length() && s.charAt(start) == s.charAt(end)) {
             start--;
             end++;
         }
-        return end-start-1;
+        return end - start - 1;
     }
 }
